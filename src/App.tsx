@@ -1,14 +1,15 @@
-import {
-  useState,
-  useEffect,
-  createContext,
-  useContext,
-  type ReactNode,
-} from "react";
+import { useState, useEffect, createContext, useContext, type ReactNode } from "react";
+import { WagmiProvider } from "wagmi";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/api";
+import { wagmiConfig } from "./lib/wallet";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 import { Layout } from "./components/Layout";
-import { Dashboard } from "./pages/Dashboard";
-import { StrategyBuilder } from "./pages/StrategyBuilder";
-import { Settings } from "./pages/Settings";
+import { Dashboard } from "./pages/dashboard";
+import { StrategyBuilder } from "./pages/strategy-builder";
+import { Settings } from "./pages/settings";
+import { Marketplace } from "./pages/marketplace";
 
 /* ── Tiny client-side router ──────────────────────────────── */
 
@@ -42,28 +43,30 @@ export function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  /* Determine active page key for the sidebar */
-  const activePage = path.startsWith("/strategy")
-    ? "builder"
-    : path === "/settings"
-      ? "settings"
-      : "dashboard";
+  let activePage: "dashboard" | "builder" | "marketplace" | "settings" = "dashboard";
+  if (path === "/settings") activePage = "settings";
+  else if (path.startsWith("/marketplace")) activePage = "marketplace";
+  else if (path.startsWith("/strategy")) activePage = "builder";
 
-  /* Route → component */
-  let page: ReactNode;
-  if (path === "/settings") {
-    page = <Settings />;
-  } else if (path.startsWith("/strategy")) {
+  let page: ReactNode = <Dashboard />;
+  if (path === "/settings") page = <Settings />;
+  else if (path.startsWith("/marketplace")) page = <Marketplace />;
+  else if (path.startsWith("/strategy")) {
     const id = path.startsWith("/strategy/") ? path.split("/")[2] : undefined;
     page = <StrategyBuilder strategyId={id} />;
-  } else {
-    page = <Dashboard />;
   }
 
   return (
-    <RouterContext.Provider value={{ path, navigate }}>
-      <Layout activePage={activePage}>{page}</Layout>
-    </RouterContext.Provider>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <RouterContext.Provider value={{ path, navigate }}>
+            <Layout activePage={activePage}>{page}</Layout>
+            <Toaster />
+          </RouterContext.Provider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }
 
