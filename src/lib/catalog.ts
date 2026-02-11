@@ -29,7 +29,7 @@ export const catalog = defineCatalog(schema, {
       props: z.object({
         name: z.string(),
         description: z.string().optional(),
-        exchange: z.enum(["binance", "robinpump"]),
+        exchange: z.enum(["robinpump"]),
         status: z.enum(["draft", "active", "paused", "error"]).default("draft"),
       }),
       description: "Header showing the strategy name, description, target exchange badge, and status. Always include a description summarizing what the strategy does.",
@@ -73,7 +73,7 @@ export const catalog = defineCatalog(schema, {
     PriceChart: {
       props: z.object({
         pair: z.string(),
-        exchange: z.enum(["binance", "robinpump"]),
+        exchange: z.enum(["robinpump"]),
         height: z.enum(["sm", "md", "lg"]).default("md"),
       }),
       description:

@@ -36,14 +36,14 @@ const WELCOME: Msg[] = [
   {
     role: "assistant",
     content:
-      'Hey! Describe your trading strategy in plain English and I\'ll build it for you.\n\nTry something like **"Buy BTC every hour when price < $60k"** or **"Snipe new RobinPump coins under $3k market cap"**.\n\nI\'ll generate the code, and you\'ll see a live dashboard on the right with knobs you can tweak.',
+      'Hey! Describe your trading strategy for **RobinPump.fun** in plain English and I\'ll build it for you.\n\nTry something like **"Snipe new coins under $3k market cap"** or **"Market make on a coin to generate volume"**.\n\nI\'ll generate the code, and you\'ll see a live dashboard on the right with knobs you can tweak.',
   },
 ];
 
 const SUGGESTIONS = [
-  "Buy $50 of Bitcoin every hour when price < $60k",
   "Snipe new RobinPump coins under $3k market cap",
-  "DCA into ETH $25 every day on Binance",
+  "DCA into a coin with 0.001 ETH every 5 minutes",
+  "Market make to generate volume — buy and sell",
 ];
 
 /* ── Shared streamdown config ─────────────────────────────── */
@@ -171,7 +171,7 @@ ${data.code.slice(0, 800)}`;
 
   const parseStrategyMeta = (code: string) => {
     const name = code.match(/\/\/ Strategy: (.+)/)?.[1] ?? "Untitled";
-    const exchange = code.match(/\/\/ Exchange: (.+)/)?.[1]?.trim() ?? "binance";
+    const exchange = code.match(/\/\/ Exchange: (.+)/)?.[1]?.trim() ?? "robinpump";
     const description = code.match(/\/\/ Description: (.+)/)?.[1] ?? "";
     const params: { key: string; type: string; defaultVal: string; desc: string }[] = [];
     for (const m of code.matchAll(/\/\/ @param (\S+) (\S+) (\S+) (.+)/g)) {

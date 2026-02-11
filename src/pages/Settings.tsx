@@ -18,7 +18,6 @@ interface Connection {
 const EMPTY: Fields = { apiKey: "", apiSecret: "", walletAddress: "" };
 
 export function Settings() {
-  const [binance, setBinance] = useState<Fields>({ ...EMPTY });
   const [robinpump, setRobinpump] = useState<Fields>({ ...EMPTY });
   const [conns, setConns] = useState<Record<string, Connection>>({});
   const [saving, setSaving] = useState<string | null>(null);
@@ -62,7 +61,6 @@ export function Settings() {
         }),
       });
       flash("Connection saved!", true);
-      if (exchange === "binance") setBinance({ ...EMPTY });
       if (exchange === "robinpump") setRobinpump({ ...EMPTY });
       await loadConns();
     } catch {
@@ -106,42 +104,11 @@ export function Settings() {
             Settings
           </h1>
           <p className="mt-2 text-text-secondary text-sm">
-            Connect your exchange accounts to enable live trading
+            Connect your Base wallet to enable live trading on RobinPump.fun
           </p>
         </div>
 
         <div className="space-y-6">
-          {/* ── Binance ────────────────────────────────────── */}
-          <ExchangeCard
-            name="Binance"
-            desc="The world's largest centralized exchange"
-            icon="🟡"
-            accent="amber"
-            connected={conns.binance?.connected ?? false}
-            isSaving={saving === "binance"}
-            canSave={!!binance.apiKey && !!binance.apiSecret}
-            onSave={() => save("binance", binance)}
-            onDisconnect={() => disconnect("binance")}
-            delay={0}
-          >
-            <SecretField
-              label="API Key"
-              value={binance.apiKey}
-              onChange={(v) => setBinance((p) => ({ ...p, apiKey: v }))}
-              placeholder="Enter your Binance API key"
-              revealed={reveal["b-key"]}
-              onToggle={() => toggleReveal("b-key")}
-            />
-            <SecretField
-              label="API Secret"
-              value={binance.apiSecret}
-              onChange={(v) => setBinance((p) => ({ ...p, apiSecret: v }))}
-              placeholder="Enter your Binance API secret"
-              revealed={reveal["b-sec"]}
-              onToggle={() => toggleReveal("b-sec")}
-            />
-          </ExchangeCard>
-
           {/* ── RobinPump ──────────────────────────────────── */}
           <ExchangeCard
             name="RobinPump"
@@ -158,7 +125,7 @@ export function Settings() {
               })
             }
             onDisconnect={() => disconnect("robinpump")}
-            delay={1}
+            delay={0}
           >
             <SecretField
               label="Wallet Private Key"
