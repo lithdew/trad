@@ -3,9 +3,12 @@ import {
   useRef,
   useEffect,
   useCallback,
+  useMemo,
   type ReactNode,
   type KeyboardEvent,
 } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import {
   Renderer,
   StateProvider,
@@ -26,17 +29,16 @@ import { registry } from "../lib/registry";
      Right:  Preview     → Haiku 4.5 (visual UI gen via json-render)
    ══════════════════════════════════════════════════════════════ */
 
-interface Msg {
-  role: "user" | "assistant" | "thinking";
-  content: string;
-  isStreaming?: boolean;
-}
-
-const WELCOME: Msg[] = [
+const WELCOME_MESSAGES: UIMessage[] = [
   {
+    id: "welcome",
     role: "assistant",
-    content:
-      'Hey! Describe your trading strategy for **RobinPump.fun** in plain English and I\'ll build it for you.\n\nTry something like **"Snipe new coins under $3k market cap"** or **"Market make on a coin to generate volume"**.\n\nI\'ll generate the code, and you\'ll see a live dashboard on the right with knobs you can tweak.',
+    parts: [
+      {
+        type: "text",
+        text: 'Hey! Describe your trading strategy for **RobinPump.fun** in plain English and I\'ll build it for you.\n\nTry something like **"Snipe new coins under $3k market cap"** or **"Market make on a coin to generate volume"**.\n\nI\'ll generate the code, and you\'ll see a live dashboard on the right with knobs you can tweak.',
+      },
+    ],
   },
 ];
 
@@ -52,19 +54,53 @@ const sdCodePlugin = createCodePlugin({
 });
 const sdPlugins = { code: sdCodePlugin };
 
+/* ── Parse helpers ──────────────────────────────────────────── */
+
+function extractCode(text: string): string | null {
+  const match = text.match(/```typescript\n([\s\S]*?)```/);
+  return match ? match[1]!.trim() : null;
+}
+
+function parseStrategyMeta(code: string) {
+  const name = code.match(/\/\/ Strategy: (.+)/)?.[1] ?? "Untitled";
+  const exchange = code.match(/\/\/ Exchange: (.+)/)?.[1]?.trim() ?? "robinpump";
+  const description = code.match(/\/\/ Description: (.+)/)?.[1] ?? "";
+  const params: { key: string; type: string; defaultVal: string; desc: string }[] = [];
+  for (const m of code.matchAll(/\/\/ @param (\S+) (\S+) (\S+) (.+)/g)) {
+    params.push({ key: m[1]!, type: m[2]!, defaultVal: m[3]!, desc: m[4]! });
+  }
+  return { name, exchange, description, params };
+}
+
+/** Build a state object from @param defaults for json-render data binding */
+function buildParamState(params: { key: string; type: string; defaultVal: string }[]) {
+  const state: Record<string, unknown> = {};
+  for (const p of params) {
+    if (p.type === "number") state[p.key] = parseFloat(p.defaultVal) || 0;
+    else if (p.type === "boolean") state[p.key] = p.defaultVal === "true";
+    else state[p.key] = p.defaultVal;
+  }
+  return state;
+}
+
+/** Extract the full concatenated text from a UIMessage's parts */
+function getMessageText(msg: UIMessage): string {
+  let text = "";
+  for (const part of msg.parts) {
+    if (part.type === "text") text += part.text;
+  }
+  return text;
+}
+
 /* ── Main Component ───────────────────────────────────────── */
 
 export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
   const { navigate } = useRouter();
 
-  const [messages, setMessages] = useState<Msg[]>(WELCOME);
-  const [input, setInput] = useState("");
-  const [isThinking, setIsThinking] = useState(false);
-  const [thinkingText, setThinkingText] = useState("");
-
   const [strategyCode, setStrategyCode] = useState("");
   const [strategyParams, setStrategyParams] = useState<Record<string, unknown>>({});
   const [viewMode, setViewMode] = useState<"visual" | "code" | "spec">("visual");
+  const [input, setInput] = useState("");
 
   /* ── Persistence state ─────────────────────────────────── */
   const [savedId, setSavedId] = useState<string | undefined>(strategyId);
@@ -82,9 +118,53 @@ export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
     onError: (err) => console.error("UI gen error:", err),
   });
 
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const thinkingEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  /* Use a ref so the onFinish callback always reads the latest strategyCode */
+  const strategyCodeRef = useRef(strategyCode);
+  strategyCodeRef.current = strategyCode;
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+      }),
+    [],
+  );
+
+  const {
+    messages,
+    sendMessage,
+    status,
+    setMessages,
+  } = useChat({
+    transport,
+    messages: WELCOME_MESSAGES,
+    onFinish: ({ message }) => {
+      const fullText = getMessageText(message);
+      const code = extractCode(fullText);
+      if (code === null) return;
+
+      setStrategyCode(code);
+      strategyCodeRef.current = code;
+      const meta = parseStrategyMeta(code);
+      const paramState = buildParamState(meta.params);
+      setStrategyParams(paramState);
+
+      const uiPrompt = `Strategy: "${meta.name}" on ${meta.exchange}.
+${meta.description}
+
+Parameters (use these EXACT default values in FlowBlock labels and MetricCard values):
+${meta.params.map((p) => `- ${p.key}: ${p.type}, default=${p.defaultVal}, ${p.desc}`).join("\n")}
+
+Strategy code summary:
+${code.slice(0, 800)}`;
+
+      sendToGenerate(uiPrompt, spec?.root ? { previousSpec: spec } : undefined);
+    },
+    onError: (err) => console.error("Chat error:", err),
+  });
 
   /* ── Toast auto-dismiss ────────────────────────────────── */
   useEffect(() => {
@@ -120,7 +200,7 @@ export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
 
         if (data.chatHistory !== null) {
           try {
-            const history = JSON.parse(data.chatHistory) as Msg[];
+            const history = JSON.parse(data.chatHistory) as UIMessage[];
             if (history.length > 0) setMessages(history);
           } catch { /* ignore parse error */ }
         }
@@ -135,7 +215,7 @@ export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
 ${meta.description}
 
 Parameters (use these EXACT default values in FlowBlock labels and MetricCard values):
-${meta.params.map((p) => `- ${p.key}: ${p.type}, default=${p.defaultVal}, ${p.desc}`).join("\n")}
+${meta.params.map((p: { key: string; type: string; defaultVal: string; desc: string }) => `- ${p.key}: ${p.type}, default=${p.defaultVal}, ${p.desc}`).join("\n")}
 
 Strategy code summary:
 ${data.code.slice(0, 800)}`;
@@ -157,47 +237,13 @@ ${data.code.slice(0, 800)}`;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* Auto-scroll thinking text as it grows */
-  useEffect(() => {
-    thinkingEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [thinkingText]);
-
-  /* ── Parse helpers ──────────────────────────────────────── */
-
-  const extractCode = (text: string): string | null => {
-    const match = text.match(/```typescript\n([\s\S]*?)```/);
-    return match ? match[1]!.trim() : null;
-  };
-
-  const parseStrategyMeta = (code: string) => {
-    const name = code.match(/\/\/ Strategy: (.+)/)?.[1] ?? "Untitled";
-    const exchange = code.match(/\/\/ Exchange: (.+)/)?.[1]?.trim() ?? "robinpump";
-    const description = code.match(/\/\/ Description: (.+)/)?.[1] ?? "";
-    const params: { key: string; type: string; defaultVal: string; desc: string }[] = [];
-    for (const m of code.matchAll(/\/\/ @param (\S+) (\S+) (\S+) (.+)/g)) {
-      params.push({ key: m[1]!, type: m[2]!, defaultVal: m[3]!, desc: m[4]! });
-    }
-    return { name, exchange, description, params };
-  };
-
-  /** Build a state object from @param defaults for json-render data binding */
-  const buildParamState = (params: { key: string; type: string; defaultVal: string }[]) => {
-    const state: Record<string, unknown> = {};
-    for (const p of params) {
-      if (p.type === "number") state[p.key] = parseFloat(p.defaultVal) || 0;
-      else if (p.type === "boolean") state[p.key] = p.defaultVal === "true";
-      else state[p.key] = p.defaultVal;
-    }
-    return state;
-  };
-
   /* ── Build the payload for save/deploy ─────────────────── */
   const buildPayload = () => {
     const meta = strategyCode ? parseStrategyMeta(strategyCode) : null;
     return {
       name: meta?.name ?? "Untitled Strategy",
       description: meta?.description ?? null,
-      exchange: meta?.exchange ?? "binance",
+      exchange: meta?.exchange ?? "robinpump",
       code: strategyCode || null,
       config: spec ? JSON.stringify(spec) : null,
       parameters: Object.keys(strategyParams).length > 0 ? JSON.stringify(strategyParams) : null,
@@ -245,7 +291,7 @@ ${data.code.slice(0, 800)}`;
 
   /* ── Deploy strategy ───────────────────────────────────── */
   const deploy = useCallback(async () => {
-    if (isDeploying || !strategyCode) return;
+    if (isDeploying || strategyCode === "") return;
     setIsDeploying(true);
     try {
       const payload = buildPayload();
@@ -325,137 +371,16 @@ ${data.code.slice(0, 800)}`;
     }
   }, [isDeleting, savedId, navigate]);
 
-  /* ── Send chat message → Sonnet 4.5 with thinking ────── */
-  const send = useCallback(async () => {
+  /* ── Send handler ──────────────────────────────────────── */
+  const send = () => {
     const text = input.trim();
-    if (!text || isThinking) return;
-
-    const userMsg: Msg = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
+    if (text === "" || status === "streaming" || status === "submitted") return;
+    sendMessage(
+      { text },
+      { body: { currentCode: strategyCodeRef.current || undefined } },
+    );
     setInput("");
-    setIsThinking(true);
-    setThinkingText("");
-
-    let fullText = "";
-    let fullThinking = "";
-
-    /* Add a streaming assistant message that we'll update live */
-    const streamingMsgIndex = { current: -1 };
-
-    try {
-      const chatMessages = [...messages.filter((m) => m.role !== "thinking"), userMsg].map((m) => ({
-        role: m.role === "assistant" ? "assistant" : "user",
-        content: m.content,
-      }));
-
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: chatMessages, currentCode: strategyCode || undefined }),
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let addedAssistantMsg = false;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.type === "thinking") {
-              fullThinking += data.text;
-              setThinkingText(fullThinking);
-            } else if (data.type === "text") {
-              fullText += data.text;
-
-              /* Stream the assistant message live */
-              if (!addedAssistantMsg) {
-                addedAssistantMsg = true;
-                /* First: add thinking collapse if we had thinking */
-                if (fullThinking) {
-                  setMessages((prev) => [...prev, { role: "thinking", content: fullThinking }]);
-                }
-                setThinkingText("");
-                /* Then add the streaming assistant message */
-                setMessages((prev) => {
-                  streamingMsgIndex.current = prev.length;
-                  return [...prev, { role: "assistant", content: fullText, isStreaming: true }];
-                });
-              } else {
-                /* Update the existing streaming message */
-                setMessages((prev) =>
-                  prev.map((m, i) =>
-                    i === streamingMsgIndex.current ? { ...m, content: fullText } : m
-                  )
-                );
-              }
-            }
-          } catch {
-            /* skip malformed */
-          }
-        }
-      }
-
-      /* Finalize: mark streaming done */
-      setMessages((prev) =>
-        prev.map((m, i) =>
-          i === streamingMsgIndex.current ? { ...m, isStreaming: false } : m
-        )
-      );
-
-      /* If we had thinking but no text started streaming yet, add it now */
-      if (fullThinking && !fullText) {
-        setMessages((prev) => [...prev, { role: "thinking", content: fullThinking }]);
-      }
-
-      /* If no assistant message was added yet */
-      if (!fullText) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "I couldn't generate a response. Try again?" },
-        ]);
-      }
-
-      /* Extract code and trigger UI generation */
-      const code = extractCode(fullText);
-      if (code) {
-        setStrategyCode(code);
-        const meta = parseStrategyMeta(code);
-        const paramState = buildParamState(meta.params);
-        setStrategyParams(paramState);
-
-        const uiPrompt = `Strategy: "${meta.name}" on ${meta.exchange}.
-${meta.description}
-
-Parameters (use these EXACT default values in FlowBlock labels and MetricCard values):
-${meta.params.map((p) => `- ${p.key}: ${p.type}, default=${p.defaultVal}, ${p.desc}`).join("\n")}
-
-Strategy code summary:
-${code.slice(0, 800)}`;
-
-        sendToGenerate(uiPrompt, spec?.root ? { previousSpec: spec } : undefined);
-      }
-    } catch (e) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: `Error: ${e instanceof Error ? e.message : String(e)}. Try again?` },
-      ]);
-    } finally {
-      setIsThinking(false);
-      setThinkingText("");
-    }
-  }, [input, isThinking, messages, strategyCode, sendToGenerate, spec]);
+  };
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -466,7 +391,7 @@ ${code.slice(0, 800)}`;
 
   const hasStrategy = !!(spec?.root && Object.keys(spec.elements ?? {}).length > 0);
   const hasCode = strategyCode.length > 0;
-  const isBusy = isThinking || isUIStreaming;
+  const isBusy = status === "streaming" || status === "submitted" || isUIStreaming;
   const isRunning = strategyStatus === "active";
 
   /* ── Status badge config ───────────────────────────────── */
@@ -569,7 +494,9 @@ ${code.slice(0, 800)}`;
             {isBusy ? (
               <>
                 <span className="w-[6px] h-[6px] rounded-full bg-gold animate-pulse" />
-                <span className="text-[11px] text-gold font-medium">{isThinking ? "Thinking…" : "Rendering…"}</span>
+                <span className="text-[11px] text-gold font-medium">
+                  {status === "submitted" ? "Sending…" : status === "streaming" ? "Thinking…" : "Rendering…"}
+                </span>
               </>
             ) : (
               <>
@@ -582,16 +509,11 @@ ${code.slice(0, 800)}`;
 
         {/* messages */}
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
-          {messages.map((m, i) => (
-            <ChatBubble key={i} msg={m} />
+          {messages.map((msg) => (
+            <ChatBubble key={msg.id} msg={msg} isLastAssistant={msg === messages[messages.length - 1] && msg.role === "assistant"} chatStatus={status} />
           ))}
 
-          {/* Live thinking indicator */}
-          {isThinking && thinkingText && (
-            <ThinkingBubble text={thinkingText} endRef={thinkingEndRef} />
-          )}
-
-          {/* Suggestion chips */}
+          {/* Suggestion chips — show only when just the welcome message exists */}
           {messages.length === 1 && (
             <div className="pl-7 flex flex-wrap gap-2 animate-fade-in stagger-2">
               {SUGGESTIONS.map((s) => (
@@ -617,7 +539,7 @@ ${code.slice(0, 800)}`;
             <div className="absolute bottom-2.5 left-4 right-3 flex items-center justify-between">
               <span className="text-[10px] text-text-muted select-none">↵ Send&ensp;·&ensp;Shift + ↵ newline</span>
               <button
-                onClick={send} disabled={!input.trim() || isBusy}
+                onClick={send} disabled={input.trim() === "" || isBusy}
                 className="bg-gold text-obsidian px-3.5 py-1 rounded-lg text-[12px] font-bold hover:bg-gold-bright transition-colors cursor-pointer disabled:opacity-25 disabled:cursor-not-allowed"
               >Send</button>
             </div>
@@ -697,7 +619,7 @@ ${code.slice(0, 800)}`;
                           if (p && typeof p === "object" && "key" in p && "value" in p) {
                             setStrategyParams((prev) => ({
                               ...prev,
-                              [(p as any).key]: (p as any).value,
+                              [(p as Record<string, unknown>).key as string]: (p as Record<string, unknown>).value,
                             }));
                           }
                         },
@@ -720,80 +642,113 @@ ${code.slice(0, 800)}`;
   );
 }
 
-/* ── Chat Bubble ──────────────────────────────────────────── */
+/* ── Chat Bubble (renders UIMessage parts) ─────────────────── */
 
-function ChatBubble({ msg }: { msg: Msg }) {
-  const [expanded, setExpanded] = useState(false);
-  const isAI = msg.role === "assistant";
-  const isThinkingMsg = msg.role === "thinking";
+function ChatBubble({
+  msg,
+  isLastAssistant,
+  chatStatus,
+}: {
+  msg: UIMessage;
+  isLastAssistant: boolean;
+  chatStatus: string;
+}) {
+  const isStreaming = isLastAssistant && (chatStatus === "streaming" || chatStatus === "submitted");
 
-  if (isThinkingMsg) {
+  /* Collect reasoning and text parts from the message */
+  const reasoningParts: string[] = [];
+  const textParts: { text: string; streaming: boolean }[] = [];
+  let hasStreamingReasoning = false;
+
+  for (const part of msg.parts) {
+    if (part.type === "reasoning") {
+      reasoningParts.push(part.text);
+      if (part.state === "streaming") hasStreamingReasoning = true;
+    } else if (part.type === "text") {
+      textParts.push({ text: part.text, streaming: part.state === "streaming" });
+    }
+  }
+
+  const fullReasoning = reasoningParts.join("");
+  const fullText = textParts.map((p) => p.text).join("");
+  const isTextStreaming = textParts.some((p) => p.streaming);
+
+  if (msg.role === "user") {
     return (
-      <div className="animate-fade-in">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-2 mb-1 cursor-pointer group"
-        >
-          <div className="w-5 h-5 rounded-md bg-violet-500/15 flex items-center justify-center">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-violet-400">
-              <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M5 3v2.5L6.5 7" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-            </svg>
+      <div className="animate-fade-in animate-slide-right">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="w-5 h-5 rounded-md bg-surface-3 flex items-center justify-center">
+            <span className="text-text-muted text-[10px] font-bold">U</span>
           </div>
-          <span className="text-[10px] font-bold text-violet-400/70 uppercase tracking-[0.08em]">Thinking</span>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={`text-text-muted transition-transform ${expanded ? "rotate-180" : ""}`}>
-            <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
-        </button>
-        {expanded && (
-          <div className="text-[12.5px] leading-[1.7] text-violet-300/70 max-h-52 overflow-y-auto border-l-2 border-violet-400/20 pl-3.5 ml-2.5 mt-1">
-            <Streamdown
-              animated={{ animation: "blurIn", duration: 100 }}
-              isAnimating={false}
-              mode="static"
-            >
-              {msg.content.length > 3000 ? msg.content.slice(0, 3000) + "…" : msg.content}
-            </Streamdown>
-          </div>
-        )}
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.08em]">You</span>
+        </div>
+        <div className="text-[13.5px] leading-[1.65] pl-7 text-text">
+          <Streamdown plugins={sdPlugins} mode="static">
+            {fullText}
+          </Streamdown>
+        </div>
       </div>
     );
   }
 
+  /* Assistant message */
   return (
-    <div className={`animate-fade-in ${isAI ? "animate-slide-left" : "animate-slide-right"}`}>
-      <div className="flex items-center gap-2 mb-1.5">
-        {isAI ? (
+    <div className="animate-fade-in animate-slide-left">
+      {/* Reasoning section (collapsible when done, live when streaming) */}
+      {fullReasoning !== "" && (
+        hasStreamingReasoning ? (
+          <LiveReasoningBubble text={fullReasoning} />
+        ) : (
+          <CollapsedReasoning text={fullReasoning} />
+        )
+      )}
+
+      {/* Text content */}
+      {fullText !== "" && (
+        <>
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-5 h-5 rounded-md bg-gold/15 flex items-center justify-center">
+              <span className="font-display text-gold text-[10px]">t</span>
+            </div>
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.08em]">trad</span>
+          </div>
+          <div className="text-[13.5px] leading-[1.65] pl-7 text-text-secondary">
+            <Streamdown
+              plugins={sdPlugins}
+              animated={{ animation: "blurIn", duration: 200, easing: "ease-out" }}
+              isAnimating={isTextStreaming}
+            >
+              {fullText}
+            </Streamdown>
+          </div>
+        </>
+      )}
+
+      {/* Show "trad" header with spinner if submitted but no text yet */}
+      {fullText === "" && isStreaming && fullReasoning === "" && (
+        <div className="flex items-center gap-2 mb-1.5">
           <div className="w-5 h-5 rounded-md bg-gold/15 flex items-center justify-center">
             <span className="font-display text-gold text-[10px]">t</span>
           </div>
-        ) : (
-          <div className="w-5 h-5 rounded-md bg-surface-3 flex items-center justify-center">
-            <span className="text-text-muted text-[10px] font-bold">U</span>
-          </div>
-        )}
-        <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.08em]">
-          {isAI ? "trad" : "You"}
-        </span>
-      </div>
-      <div className={`text-[13.5px] leading-[1.65] pl-7 ${isAI ? "text-text-secondary" : "text-text"}`}>
-        <Streamdown
-          plugins={sdPlugins}
-          animated={{ animation: "blurIn", duration: 200, easing: "ease-out" }}
-          isAnimating={!!msg.isStreaming}
-        >
-          {msg.content}
-        </Streamdown>
-      </div>
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.08em]">trad</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+        </div>
+      )}
     </div>
   );
 }
 
-/* ── Live Thinking Bubble ─────────────────────────────────── */
+/* ── Live Reasoning Bubble (shown while streaming) ─────────── */
 
-function ThinkingBubble({ text, endRef }: { text: string; endRef: React.RefObject<HTMLDivElement | null> }) {
+function LiveReasoningBubble({ text }: { text: string }) {
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [text]);
+
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in mb-3">
       <div className="flex items-center gap-2 mb-1.5">
         <div className="w-5 h-5 rounded-md bg-violet-500/15 flex items-center justify-center">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-violet-400 animate-pulse">
@@ -816,10 +771,47 @@ function ThinkingBubble({ text, endRef }: { text: string; endRef: React.RefObjec
   );
 }
 
+/* ── Collapsed Reasoning (toggleable, after streaming done) ── */
+
+function CollapsedReasoning({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="animate-fade-in mb-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 mb-1 cursor-pointer group"
+      >
+        <div className="w-5 h-5 rounded-md bg-violet-500/15 flex items-center justify-center">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-violet-400">
+            <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M5 3v2.5L6.5 7" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+          </svg>
+        </div>
+        <span className="text-[10px] font-bold text-violet-400/70 uppercase tracking-[0.08em]">Thinking</span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={`text-text-muted transition-transform ${expanded ? "rotate-180" : ""}`}>
+          <path d="M2.5 4l2.5 2.5L7.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        </svg>
+      </button>
+      {expanded && (
+        <div className="text-[12.5px] leading-[1.7] text-violet-300/70 max-h-52 overflow-y-auto border-l-2 border-violet-400/20 pl-3.5 ml-2.5 mt-1">
+          <Streamdown
+            animated={{ animation: "blurIn", duration: 100 }}
+            isAnimating={false}
+            mode="static"
+          >
+            {text.length > 3000 ? text.slice(0, 3000) + "…" : text}
+          </Streamdown>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Strategy Code View ───────────────────────────────────── */
 
 function StrategyCodeView({ code: stratCode }: { code: string }) {
-  if (!stratCode) {
+  if (stratCode === "") {
     return (
       <div className="h-full flex items-center justify-center text-text-muted text-sm">
         Strategy code will appear here after you describe your strategy.
@@ -837,7 +829,7 @@ function StrategyCodeView({ code: stratCode }: { code: string }) {
 /* ── Spec JSON View ───────────────────────────────────────── */
 
 function SpecJsonView({ spec }: { spec: Spec | null }) {
-  const json = spec ? JSON.stringify(spec, null, 2) : "// No spec generated yet";
+  const json = spec !== null ? JSON.stringify(spec, null, 2) : "// No spec generated yet";
   const md = "```json\n" + json + "\n```";
   return (
     <div className="p-5 animate-fade-in max-h-[calc(100vh-100px)] overflow-y-auto">
