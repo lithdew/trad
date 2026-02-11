@@ -66,6 +66,17 @@ export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
   const [strategyParams, setStrategyParams] = useState<Record<string, unknown>>({});
   const [viewMode, setViewMode] = useState<"visual" | "code" | "spec">("visual");
 
+  /* ── Persistence state ─────────────────────────────────── */
+  const [savedId, setSavedId] = useState<string | undefined>(strategyId);
+  const [strategyStatus, setStrategyStatus] = useState<string>("draft");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(strategyId !== undefined);
+
   const { spec, isStreaming: isUIStreaming, send: sendToGenerate } = useUIStream({
     api: "/api/generate",
     onError: (err) => console.error("UI gen error:", err),
@@ -74,6 +85,72 @@ export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const thinkingEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  /* ── Toast auto-dismiss ────────────────────────────────── */
+  useEffect(() => {
+    if (toastMsg === null) return;
+    const t = setTimeout(() => setToastMsg(null), 3000);
+    return () => clearTimeout(t);
+  }, [toastMsg]);
+
+  /* ── Load existing strategy ────────────────────────────── */
+  useEffect(() => {
+    if (strategyId === undefined) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/strategies/${strategyId}`);
+        if (!res.ok) throw new Error("Not found");
+        const data = await res.json();
+        if (cancelled) return;
+
+        setSavedId(data.id);
+        setStrategyStatus(data.status);
+
+        if (data.code !== null && data.code !== "") {
+          setStrategyCode(data.code);
+        }
+
+        if (data.parameters !== null) {
+          try {
+            setStrategyParams(JSON.parse(data.parameters));
+          } catch { /* ignore parse error */ }
+        }
+
+        if (data.chatHistory !== null) {
+          try {
+            const history = JSON.parse(data.chatHistory) as Msg[];
+            if (history.length > 0) setMessages(history);
+          } catch { /* ignore parse error */ }
+        }
+
+        /* If strategy has code, trigger UI generation to restore the visual */
+        if (data.code !== null && data.code !== "") {
+          const meta = parseStrategyMeta(data.code);
+          const paramState = buildParamState(meta.params);
+          setStrategyParams(paramState);
+
+          const uiPrompt = `Strategy: "${meta.name}" on ${meta.exchange}.
+${meta.description}
+
+Parameters (use these EXACT default values in FlowBlock labels and MetricCard values):
+${meta.params.map((p) => `- ${p.key}: ${p.type}, default=${p.defaultVal}, ${p.desc}`).join("\n")}
+
+Strategy code summary:
+${data.code.slice(0, 800)}`;
+
+          sendToGenerate(uiPrompt);
+        }
+      } catch {
+        setToastMsg("Failed to load strategy");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [strategyId]);
 
   /* Auto-scroll chat to bottom */
   useEffect(() => {
@@ -113,6 +190,140 @@ export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
     }
     return state;
   };
+
+  /* ── Build the payload for save/deploy ─────────────────── */
+  const buildPayload = () => {
+    const meta = strategyCode ? parseStrategyMeta(strategyCode) : null;
+    return {
+      name: meta?.name ?? "Untitled Strategy",
+      description: meta?.description ?? null,
+      exchange: meta?.exchange ?? "binance",
+      code: strategyCode || null,
+      config: spec ? JSON.stringify(spec) : null,
+      parameters: Object.keys(strategyParams).length > 0 ? JSON.stringify(strategyParams) : null,
+      chatHistory: JSON.stringify(messages),
+    };
+  };
+
+  /* ── Save as draft ─────────────────────────────────────── */
+  const saveDraft = useCallback(async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const payload = { ...buildPayload(), status: "draft" };
+
+      if (savedId !== undefined) {
+        const res = await fetch(`/api/strategies/${savedId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Save failed");
+        const data = await res.json();
+        setStrategyStatus(data.status);
+        setToastMsg("Strategy saved as draft");
+      } else {
+        const res = await fetch("/api/strategies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Save failed");
+        const data = await res.json();
+        setSavedId(data.id);
+        setStrategyStatus(data.status);
+        setToastMsg("Strategy saved as draft");
+        /* Update URL to include the new ID so refresh preserves state */
+        window.history.replaceState(null, "", `/strategy/${data.id}`);
+      }
+    } catch (e) {
+      setToastMsg(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, savedId, strategyCode, strategyParams, messages, spec]);
+
+  /* ── Deploy strategy ───────────────────────────────────── */
+  const deploy = useCallback(async () => {
+    if (isDeploying || !strategyCode) return;
+    setIsDeploying(true);
+    try {
+      const payload = buildPayload();
+
+      /* Save first (create or update) */
+      let id = savedId;
+      if (id === undefined) {
+        const res = await fetch("/api/strategies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, status: "draft" }),
+        });
+        if (!res.ok) throw new Error("Save failed");
+        const data = await res.json();
+        id = data.id;
+        setSavedId(id);
+        window.history.replaceState(null, "", `/strategy/${id}`);
+      } else {
+        const res = await fetch(`/api/strategies/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Save failed");
+      }
+
+      /* Now deploy */
+      const deployRes = await fetch(`/api/strategies/${id}/deploy`, { method: "POST" });
+      if (!deployRes.ok) {
+        const err = await deployRes.json();
+        throw new Error(err.error ?? "Deploy failed");
+      }
+      const deployedData = await deployRes.json();
+      setStrategyStatus(deployedData.status ?? "active");
+      setToastMsg("Strategy deployed and running!");
+    } catch (e) {
+      setToastMsg(`Deploy failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setIsDeploying(false);
+    }
+  }, [isDeploying, savedId, strategyCode, strategyParams, messages, spec]);
+
+  /* ── Stop a running strategy ───────────────────────────── */
+  const stopRunning = useCallback(async () => {
+    if (isStopping || savedId === undefined) return;
+    setIsStopping(true);
+    try {
+      const res = await fetch(`/api/strategies/${savedId}/stop`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Stop failed");
+      }
+      const data = await res.json();
+      setStrategyStatus(data.status ?? "paused");
+      setToastMsg("Strategy stopped");
+    } catch (e) {
+      setToastMsg(`Stop failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setIsStopping(false);
+    }
+  }, [isStopping, savedId]);
+
+  /* ── Delete strategy ───────────────────────────────────── */
+  const deleteStrategy = useCallback(async () => {
+    if (isDeleting || savedId === undefined) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/strategies/${savedId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      setToastMsg("Strategy deleted");
+      navigate("/");
+    } catch (e) {
+      setToastMsg(`Delete failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }, [isDeleting, savedId, navigate]);
 
   /* ── Send chat message → Sonnet 4.5 with thinking ────── */
   const send = useCallback(async () => {
@@ -254,11 +465,77 @@ ${code.slice(0, 800)}`;
   };
 
   const hasStrategy = !!(spec?.root && Object.keys(spec.elements ?? {}).length > 0);
+  const hasCode = strategyCode.length > 0;
   const isBusy = isThinking || isUIStreaming;
+  const isRunning = strategyStatus === "active";
+
+  /* ── Status badge config ───────────────────────────────── */
+  const STATUS_CFG: Record<string, { bg: string; fg: string; dot: string }> = {
+    active: { bg: "bg-emerald-500/10", fg: "text-emerald-400", dot: "bg-emerald-400" },
+    paused: { bg: "bg-amber-500/10", fg: "text-amber-400", dot: "bg-amber-400" },
+    draft: { bg: "bg-zinc-500/10", fg: "text-zinc-400", dot: "bg-zinc-500" },
+    error: { bg: "bg-red-500/10", fg: "text-red-400", dot: "bg-red-400" },
+  };
+  const statusCfg = STATUS_CFG[strategyStatus] ?? STATUS_CFG.draft!;
 
   /* ── Render ──────────────────────────────────────────────── */
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+          <span className="text-text-muted text-sm">Loading strategy…</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full">
+      {/* ════════════════ Toast ════════════════════════════ */}
+      {toastMsg !== null && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-up">
+          <div className="bg-surface-3 border border-border-light rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-2.5">
+            <span className="text-[13px] text-text">{toastMsg}</span>
+            <button onClick={() => setToastMsg(null)} className="text-text-muted hover:text-text transition-colors cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4l6 6M10 4l-6 6" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════ Delete Confirm Modal ════════════ */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/70 backdrop-blur-sm">
+          <div className="bg-surface-2 border border-border rounded-2xl p-6 w-[380px] shadow-2xl animate-fade-in">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-red-400">
+                  <path d="M3 6h14M8 6V4a1 1 0 011-1h2a1 1 0 011 1v2M5 6v10a2 2 0 002 2h6a2 2 0 002-2V6" />
+                  <path d="M8.5 9.5v5M11.5 9.5v5" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-[15px] font-semibold text-text">Delete Strategy?</h3>
+                <p className="text-[13px] text-text-muted">This action cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 justify-end mt-5">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 border border-border rounded-xl text-[13px] font-semibold text-text-secondary hover:text-text hover:border-border-light transition-all cursor-pointer"
+              >Cancel</button>
+              <button
+                onClick={deleteStrategy}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-500/15 border border-red-500/20 text-red-400 rounded-xl text-[13px] font-semibold hover:bg-red-500/25 transition-all cursor-pointer disabled:opacity-50"
+              >{isDeleting ? "Deleting…" : "Delete"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ════════════════ Chat Panel ═══════════════════════ */}
       <div className="w-[420px] min-w-[340px] h-full flex flex-col border-r border-border bg-surface/40 shrink-0">
         {/* header */}
@@ -267,9 +544,28 @@ ${code.slice(0, 800)}`;
             <button onClick={() => navigate("/")} className="text-text-muted hover:text-text-secondary transition-colors cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 12L6 8l4-4" /></svg>
             </button>
-            <h2 className="text-sm font-semibold text-text">{strategyId ? "Edit Strategy" : "New Strategy"}</h2>
+            <h2 className="text-sm font-semibold text-text">{savedId !== undefined ? "Edit Strategy" : "New Strategy"}</h2>
+            {savedId !== undefined && (
+              <span className={`flex items-center gap-1.5 px-2 py-[3px] rounded-full ${statusCfg.bg}`}>
+                <span className={`w-[5px] h-[5px] rounded-full ${statusCfg.dot}`} />
+                <span className={`text-[10px] font-bold capitalize ${statusCfg.fg}`}>{strategyStatus}</span>
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            {/* Delete button — only for saved strategies */}
+            {savedId !== undefined && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-1.5 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer"
+                title="Delete strategy"
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M2.5 4.5h10M6 4.5V3a.75.75 0 01.75-.75h1.5A.75.75 0 019 3v1.5M4 4.5v7.25a1.5 1.5 0 001.5 1.5h4a1.5 1.5 0 001.5-1.5V4.5" />
+                  <path d="M6.25 7v3.5M8.75 7v3.5" />
+                </svg>
+              </button>
+            )}
             {isBusy ? (
               <>
                 <span className="w-[6px] h-[6px] rounded-full bg-gold animate-pulse" />
@@ -350,10 +646,33 @@ ${code.slice(0, 800)}`;
               <TabBtn active={viewMode === "code"} onClick={() => setViewMode("code")}>Code</TabBtn>
               <TabBtn active={viewMode === "spec"} onClick={() => setViewMode("spec")}>Spec</TabBtn>
             </div>
-            {hasStrategy && (
+            {hasCode && (
               <>
-                <button className="px-3.5 py-1.5 border border-border rounded-lg text-[12px] font-semibold text-text-secondary hover:text-text hover:border-border-light transition-all cursor-pointer">Save Draft</button>
-                <button className="px-3.5 py-1.5 bg-gold text-obsidian rounded-lg text-[12px] font-bold hover:bg-gold-bright transition-all hover:shadow-[0_0_16px_rgba(229,160,13,0.18)] cursor-pointer">Deploy</button>
+                <button
+                  onClick={saveDraft}
+                  disabled={isSaving || isBusy}
+                  className="px-3.5 py-1.5 border border-border rounded-lg text-[12px] font-semibold text-text-secondary hover:text-text hover:border-border-light transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >{isSaving ? "Saving…" : "Save Draft"}</button>
+
+                {isRunning ? (
+                  <button
+                    onClick={stopRunning}
+                    disabled={isStopping}
+                    className="px-3.5 py-1.5 bg-red-500/15 border border-red-500/20 text-red-400 rounded-lg text-[12px] font-bold hover:bg-red-500/25 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><rect x="2" y="2" width="6" height="6" rx="1" /></svg>
+                    {isStopping ? "Stopping…" : "Stop"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={deploy}
+                    disabled={isDeploying || isBusy}
+                    className="px-3.5 py-1.5 bg-gold text-obsidian rounded-lg text-[12px] font-bold hover:bg-gold-bright transition-all hover:shadow-[0_0_16px_rgba(229,160,13,0.18)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 1l7 4-7 4V1z" /></svg>
+                    {isDeploying ? "Deploying…" : "Deploy"}
+                  </button>
+                )}
               </>
             )}
           </div>
