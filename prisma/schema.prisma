@@ -14,7 +14,7 @@ datasource db {
 
 model ExchangeSecret {
   id            String   @id @default(cuid())
-  exchange      String   @unique // "binance" | "robinpump"
+  exchange      String   @unique // "robinpump"
   apiKey        String
   apiSecret     String
   walletAddress String?
@@ -26,7 +26,7 @@ model Strategy {
   id          String    @id @default(cuid())
   name        String
   description String?
-  exchange    String // "binance" | "robinpump"
+  exchange    String // "robinpump"
   status      String    @default("draft") // draft | active | paused | error
   code        String? // Generated TypeScript strategy code
   config      String? // JSON string of the json-render UI spec
@@ -35,4 +35,138 @@ model Strategy {
   lastRun     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  runs        StrategyRun[]
+  listings    MarketplaceListing[]
+}
+
+model StrategyRun {
+  id               String   @id @default(cuid())
+  strategyId       String
+  startedAt        DateTime @default(now())
+  stoppedAt        DateTime?
+
+  /** Baseline ETH capital at run start (wallet or delegate deposit). */
+  initialCapitalEth Float
+  /** Whether this run was started while DRY_RUN was enabled. */
+  isDryRun          Boolean  @default(false)
+  /** Execution mode used by the runtime ("delegate" | "direct"). */
+  executionMode     String
+  /** User address (delegate depositor or direct wallet), if known. */
+  userAddress       String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  strategy          Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  trades            StrategyTrade[]
+  positions         StrategyPosition[]
+
+  @@index([strategyId, startedAt])
+  @@index([strategyId, stoppedAt])
+}
+
+model StrategyTrade {
+  id              String   @id @default(cuid())
+  runId           String
+
+  /** Trade time as unix seconds. */
+  timestamp       Int
+  side            String // "buy" | "sell"
+  pairAddress     String
+  tokenAddress    String?
+
+  txHash          String
+  status          String
+
+  /** ETH notional (spent for buys, received for sells). */
+  amountEth       Float
+  /** Token amount (received for buys, sold for sells). */
+  tokenAmount     Float
+
+  /** Platform fee (delegate mode) in ETH. */
+  feeEth          Float
+  /** Gas paid by the user (direct mode) in ETH. */
+  gasEth          Float
+
+  /** Realized PnL impact from this trade in ETH. */
+  pnlEth          Float
+  /** Percent PnL relative to amountEth. */
+  pnlPct          Float
+  /** Cumulative realized PnL in ETH for the run. */
+  cumulativePnlEth Float
+
+  /** Sequential trade index within a run. */
+  idx             Int
+
+  createdAt       DateTime @default(now())
+
+  run             StrategyRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, idx])
+  @@index([runId, timestamp])
+  @@index([runId, pairAddress])
+}
+
+model StrategyPosition {
+  id          String   @id @default(cuid())
+  runId       String
+
+  pairAddress String
+  tokenAddress String?
+
+  /** Human-readable token units (assumes 18 decimals for now). */
+  tokenHeld   Float
+  /** Total ETH cost basis for the held tokens (avg-cost method). */
+  costBasisEth Float
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  run         StrategyRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, pairAddress])
+  @@index([runId])
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Marketplace — buy/sell strategy templates
+   ═══════════════════════════════════════════════════════════ */
+
+model MarketplaceListing {
+  id            String   @id @default(cuid())
+  strategyId    String
+  sellerAddress String   // wallet address of the creator
+
+  title         String
+  description   String?
+  category      String   @default("general") // general | momentum | dip-buying | new-launches | swing
+
+  priceEth      Float
+  status        String   @default("listed") // listed | delisted
+  purchaseCount Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  strategy      Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  purchases     MarketplacePurchase[]
+
+  @@index([status, createdAt])
+  @@index([sellerAddress])
+  @@index([category])
+}
+
+model MarketplacePurchase {
+  id           String   @id @default(cuid())
+  listingId    String
+  buyerAddress String   // wallet address of the buyer
+  pricePaidEth Float
+
+  createdAt    DateTime @default(now())
+
+  listing      MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, buyerAddress])
+  @@index([buyerAddress])
 }
