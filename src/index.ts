@@ -1,5 +1,5 @@
 import { serve } from "bun";
-import { streamText } from "ai";
+import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import index from "./index.html";
 import { prisma } from "./db";
@@ -134,32 +134,31 @@ const server = serve({
       async POST(req) {
         try {
           const { messages, currentCode } = (await req.json()) as {
-            messages: { role: string; content: string }[];
+            messages: UIMessage[];
             currentCode?: string;
           };
 
-          // Build messages for the AI
-          const aiMessages = messages.map((m) => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          }));
+          // Convert UI messages to model messages
+          const modelMessages = await convertToModelMessages(messages);
 
           // If there's existing code, prepend context
           if (currentCode) {
-            aiMessages.unshift({
-              role: "user" as const,
-              content: `Current strategy code:\n\`\`\`typescript\n${currentCode}\n\`\`\`\nPlease iterate on this strategy based on my next message.`,
-            });
-            aiMessages.unshift({
-              role: "assistant" as const,
-              content: "I can see your current strategy. What would you like to change?",
-            });
+            modelMessages.unshift(
+              {
+                role: "user" as const,
+                content: `Current strategy code:\n\`\`\`typescript\n${currentCode}\n\`\`\`\nPlease iterate on this strategy based on my next message.`,
+              },
+              {
+                role: "assistant" as const,
+                content: "I can see your current strategy. What would you like to change?",
+              },
+            );
           }
 
           const result = streamText({
             model: anthropic("claude-sonnet-4-5"),
             system: STRATEGY_SYSTEM,
-            messages: aiMessages,
+            messages: modelMessages,
             maxOutputTokens: 16000,
             providerOptions: {
               anthropic: {
@@ -168,46 +167,8 @@ const server = serve({
             },
           });
 
-          // Stream a custom SSE format: thinking, text, and reasoning deltas
-          const encoder = new TextEncoder();
-          const stream = new ReadableStream({
-            async start(controller) {
-              try {
-                for await (const part of result.fullStream) {
-                  if (part.type === "reasoning-delta") {
-                    controller.enqueue(
-                      encoder.encode(
-                        `data: ${JSON.stringify({ type: "thinking", text: part.text })}\n\n`,
-                      ),
-                    );
-                  } else if (part.type === "text-delta") {
-                    controller.enqueue(
-                      encoder.encode(
-                        `data: ${JSON.stringify({ type: "text", text: part.text })}\n\n`,
-                      ),
-                    );
-                  } else if (part.type === "finish") {
-                    controller.enqueue(
-                      encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`),
-                    );
-                  }
-                }
-                controller.close();
-              } catch (e) {
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ type: "error", text: String(e) })}\n\n`),
-                );
-                controller.close();
-              }
-            },
-          });
-
-          return new Response(stream, {
-            headers: {
-              "Content-Type": "text/event-stream",
-              "Cache-Control": "no-cache",
-              Connection: "keep-alive",
-            },
+          return result.toUIMessageStreamResponse({
+            sendReasoning: true,
           });
         } catch (e) {
           console.error("POST /api/chat error:", e);
