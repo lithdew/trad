@@ -16,46 +16,46 @@
 
 ### 2.1 Color Tokens (defined in `src/index.css` via Tailwind v4 `@theme`)
 
-| Token               | Hex       | Usage                                    |
-| -------------------- | --------- | ---------------------------------------- |
-| `--color-obsidian`   | `#08080a` | Root background, deepest layer           |
-| `--color-surface`    | `#0e0e11` | Sidebar, card backgrounds                |
-| `--color-surface-2`  | `#151518` | Elevated cards, input backgrounds, code block bg |
-| `--color-surface-3`  | `#1c1c20` | Highest elevation, active tab, tooltips  |
-| `--color-surface-hover` | `#222226` | Hover states                          |
-| `--color-border`     | `#252529` | Default borders                          |
-| `--color-border-light` | `#38383e` | Emphasized borders, code block borders |
-| `--color-gold`       | `#e5a00d` | Primary accent — buttons, active states, brand |
-| `--color-gold-bright`| `#f5c542` | Hover accent, inline code text           |
-| `--color-gold-dim`   | `#8b6914` | Blockquote borders, subtle gold          |
-| `--color-positive`   | `#22c55e` | Emerald — success, active, RobinPump     |
-| `--color-negative`   | `#ef4444` | Red — errors, sell, danger               |
-| `--color-text`       | `#eaeaed` | Primary text (bright off-white)          |
-| `--color-text-secondary` | `#9898a3` | Body text, descriptions             |
-| `--color-text-muted` | `#5b5b66` | Placeholders, metadata, disabled         |
+| Token                    | Hex       | Usage                                            |
+| ------------------------ | --------- | ------------------------------------------------ |
+| `--color-obsidian`       | `#08080a` | Root background, deepest layer                   |
+| `--color-surface`        | `#0e0e11` | Sidebar, card backgrounds                        |
+| `--color-surface-2`      | `#151518` | Elevated cards, input backgrounds, code block bg |
+| `--color-surface-3`      | `#1c1c20` | Highest elevation, active tab, tooltips          |
+| `--color-surface-hover`  | `#222226` | Hover states                                     |
+| `--color-border`         | `#252529` | Default borders                                  |
+| `--color-border-light`   | `#38383e` | Emphasized borders, code block borders           |
+| `--color-gold`           | `#e5a00d` | Primary accent — buttons, active states, brand   |
+| `--color-gold-bright`    | `#f5c542` | Hover accent, inline code text                   |
+| `--color-gold-dim`       | `#8b6914` | Blockquote borders, subtle gold                  |
+| `--color-positive`       | `#22c55e` | Emerald — success, active, RobinPump             |
+| `--color-negative`       | `#ef4444` | Red — errors, sell, danger                       |
+| `--color-text`           | `#eaeaed` | Primary text (bright off-white)                  |
+| `--color-text-secondary` | `#9898a3` | Body text, descriptions                          |
+| `--color-text-muted`     | `#5b5b66` | Placeholders, metadata, disabled                 |
 
 ### 2.2 Typography (Google Fonts, loaded via `<link>` in `index.html`)
 
-| Role     | Font Family    | Weights    | CSS Variable     | Usage                    |
-| -------- | -------------- | ---------- | ---------------- | ------------------------ |
-| Display  | **Syne**       | 700, 800   | `--font-display` | Strategy names, page headings, logo "t" |
-| Body     | **Manrope**    | 400–800    | `--font-body`    | All UI text, buttons, labels |
-| Mono     | **JetBrains Mono** | 400–600 | `--font-mono` | Code blocks, inline code, param inputs |
+| Role    | Font Family        | Weights  | CSS Variable     | Usage                                   |
+| ------- | ------------------ | -------- | ---------------- | --------------------------------------- |
+| Display | **Syne**           | 700, 800 | `--font-display` | Strategy names, page headings, logo "t" |
+| Body    | **Manrope**        | 400–800  | `--font-body`    | All UI text, buttons, labels            |
+| Mono    | **JetBrains Mono** | 400–600  | `--font-mono`    | Code blocks, inline code, param inputs  |
 
 ### 2.3 Semantic Colors by Context
 
-| Context         | Color          | Tailwind Class       |
-| --------------- | -------------- | -------------------- |
-| Binance badge   | Yellow-500     | `bg-yellow-500/10 text-yellow-500` |
-| RobinPump badge | Emerald-400    | `bg-emerald-500/10 text-emerald-400` |
-| Status: active  | Emerald-400    | `bg-emerald-500/10 text-emerald-400` |
-| Status: paused  | Amber-400      | `bg-amber-500/10 text-amber-400`     |
-| Status: draft   | Zinc-400       | `bg-zinc-500/10 text-zinc-400`       |
-| Status: error   | Red-400        | `bg-red-500/10 text-red-400`         |
-| WHEN blocks     | Blue-400       | `border-blue-500/20 bg-blue-500/[0.04]` |
-| IF blocks       | Violet-400     | `border-violet-500/20 bg-violet-500/[0.04]` |
+| Context         | Color          | Tailwind Class                                |
+| --------------- | -------------- | --------------------------------------------- |
+| Binance badge   | Yellow-500     | `bg-yellow-500/10 text-yellow-500`            |
+| RobinPump badge | Emerald-400    | `bg-emerald-500/10 text-emerald-400`          |
+| Status: active  | Emerald-400    | `bg-emerald-500/10 text-emerald-400`          |
+| Status: paused  | Amber-400      | `bg-amber-500/10 text-amber-400`              |
+| Status: draft   | Zinc-400       | `bg-zinc-500/10 text-zinc-400`                |
+| Status: error   | Red-400        | `bg-red-500/10 text-red-400`                  |
+| WHEN blocks     | Blue-400       | `border-blue-500/20 bg-blue-500/[0.04]`       |
+| IF blocks       | Violet-400     | `border-violet-500/20 bg-violet-500/[0.04]`   |
 | THEN blocks     | Emerald-400    | `border-emerald-500/20 bg-emerald-500/[0.04]` |
-| Thinking UI     | Violet-300/400 | `text-violet-300/70`, `bg-violet-500/15` |
+| Thinking UI     | Violet-300/400 | `text-violet-300/70`, `bg-violet-500/15`      |
 
 ### 2.4 Animations (defined in `index.css`)
 
@@ -80,6 +80,7 @@
 **Critical setup:** `<html class="dark">` in `index.html` + `@variant dark (&:is(.dark *))` in `index.css`.
 
 This is required because:
+
 - Streamdown's code block component uses `dark:` Tailwind variants internally (e.g., `dark:text-[var(--shiki-dark,...)]`, `dark:bg-[var(--shiki-dark-bg,...)]`)
 - Tailwind v4 defaults to `prefers-color-scheme` for the `dark:` variant
 - Our app is always dark, so we force it with the class-based approach
@@ -95,9 +96,10 @@ The `--shiki-dark-bg` CSS variable is set to `var(--color-surface-2)` on `[data-
 
 **Package:** `streamdown` v2.2.0 + `@streamdown/code` v1.0.2  
 **Purpose:** Renders AI chat messages as rich markdown with streaming animation  
-**Theme:** `github-dark-high-contrast` shiki theme (both slots in the tuple)  
+**Theme:** `github-dark-high-contrast` shiki theme (both slots in the tuple)
 
 **Configuration in StrategyBuilder:**
+
 ```tsx
 import { createCodePlugin } from "@streamdown/code";
 
@@ -115,10 +117,11 @@ const sdPlugins = { code: sdCodePlugin };
   isAnimating={!!msg.isStreaming}
 >
   {msg.content}
-</Streamdown>
+</Streamdown>;
 ```
 
 **CSS setup required:**
+
 - `@source "../node_modules/streamdown/dist/*.js"` in CSS for Tailwind to scan Streamdown classes
 - `import "streamdown/styles.css"` for animation keyframes
 - Custom dark theme overrides via `[data-streamdown="..."]` selectors in `index.css`
@@ -131,6 +134,7 @@ const sdPlugins = { code: sdCodePlugin };
 **Purpose:** Defines a component catalog, AI generates JSON specs, React renders them
 
 **Architecture:**
+
 1. `src/lib/catalog.ts` — Zod-schema catalog defining all components the AI can use
 2. `src/lib/registry.tsx` — React implementation of each catalog component
 3. Server: `catalog.prompt()` auto-generates the system prompt for Haiku
@@ -138,6 +142,7 @@ const sdPlugins = { code: sdCodePlugin };
 5. `<Renderer spec={spec} registry={registry} loading={isUIStreaming} />` renders it
 
 **Spec format:** Flat element tree with `root` key and `elements` map:
+
 ```json
 {
   "root": "main",
@@ -157,13 +162,15 @@ The `useUIStream` hook applies patches progressively to build the spec.
 
 **Packages:** `ai` v6.0.78, `@ai-sdk/anthropic` v3.0.41  
 **Two models:**
+
 - **Claude Sonnet 4.5** (`claude-sonnet-4-5`) — strategy code gen + chat, with extended thinking (`budgetTokens: 10000`)
 - **Claude Haiku 4.5** (`claude-haiku-4-5`) — UI spec generation (fast, cheap)
 
 **Chat endpoint (`/api/chat`):** Custom SSE stream format:
+
 ```
 data: {"type":"thinking","text":"..."}    ← reasoning tokens
-data: {"type":"text","text":"..."}        ← assistant text tokens  
+data: {"type":"text","text":"..."}        ← assistant text tokens
 data: {"type":"done"}                     ← stream complete
 ```
 
@@ -175,45 +182,46 @@ data: {"type":"done"}                     ← stream complete
 
 ### 5.1 Layout Components
 
-| Component | Key Props | Grid Behavior |
-|-----------|-----------|---------------|
-| `Container` | `layout: "flex"\|"grid"`, `columns: "1"\|"2"\|"3"\|"auto"`, `gap`, `padding`, `direction`, `align` | Root should be `layout="grid" columns="2"` for bento |
-| `StrategyHeader` | `name`, `exchange`, `status` | `gridColumn: "1 / -1"` (spans full width) |
-| `Heading` | `text`, `level` | `gridColumn: "1 / -1"` |
-| `Divider` | — | `gridColumn: "1 / -1"` |
-| `InfoBox` | `title`, `content`, `variant` | `gridColumn: "1 / -1"` |
+| Component        | Key Props                                                                                          | Grid Behavior                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `Container`      | `layout: "flex"\|"grid"`, `columns: "1"\|"2"\|"3"\|"auto"`, `gap`, `padding`, `direction`, `align` | Root should be `layout="grid" columns="2"` for bento |
+| `StrategyHeader` | `name`, `exchange`, `status`                                                                       | `gridColumn: "1 / -1"` (spans full width)            |
+| `Heading`        | `text`, `level`                                                                                    | `gridColumn: "1 / -1"`                               |
+| `Divider`        | —                                                                                                  | `gridColumn: "1 / -1"`                               |
+| `InfoBox`        | `title`, `content`, `variant`                                                                      | `gridColumn: "1 / -1"`                               |
 
 ### 5.2 Strategy Flow Components
 
-| Component | Key Props | Notes |
-|-----------|-----------|-------|
-| `FlowBlock` | `tag: "WHEN"\|"IF"\|"THEN"\|...`, `label`, `color: "blue"\|"violet"\|"emerald"\|"amber"\|"red"`, `icon: "clock"\|"chart"\|"bolt"\|"coins"\|"alert"\|"repeat"` | Color-coded by step type |
-| `Connector` | `style: "solid"\|"dashed"\|"arrow"` | Vertical line between FlowBlocks |
+| Component   | Key Props                                                                                                                                                     | Notes                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `FlowBlock` | `tag: "WHEN"\|"IF"\|"THEN"\|...`, `label`, `color: "blue"\|"violet"\|"emerald"\|"amber"\|"red"`, `icon: "clock"\|"chart"\|"bolt"\|"coins"\|"alert"\|"repeat"` | Color-coded by step type         |
+| `Connector` | `style: "solid"\|"dashed"\|"arrow"`                                                                                                                           | Vertical line between FlowBlocks |
 
 ### 5.3 Data Display
 
-| Component | Key Props | Notes |
-|-----------|-----------|-------|
-| `MetricCard` | `label`, `value`, `unit?`, `trend?: "up"\|"down"\|"neutral"` | Inside MetricRow |
-| `MetricRow` | — (slot) | Renders as `grid grid-cols-2 gap-2` |
-| `PriceChart` | `pair`, `exchange`, `height: "sm"\|"md"\|"lg"` | SVG candlestick with demo data |
-| `Badge` | `label`, `color` | Colored pill |
-| `Text` | `content`, `variant: "body"\|"caption"\|"code"\|"mono"` | — |
+| Component    | Key Props                                                    | Notes                               |
+| ------------ | ------------------------------------------------------------ | ----------------------------------- |
+| `MetricCard` | `label`, `value`, `unit?`, `trend?: "up"\|"down"\|"neutral"` | Inside MetricRow                    |
+| `MetricRow`  | — (slot)                                                     | Renders as `grid grid-cols-2 gap-2` |
+| `PriceChart` | `pair`, `exchange`, `height: "sm"\|"md"\|"lg"`               | SVG candlestick with demo data      |
+| `Badge`      | `label`, `color`                                             | Colored pill                        |
+| `Text`       | `content`, `variant: "body"\|"caption"\|"code"\|"mono"`      | —                                   |
 
 ### 5.4 Interactive Parameter Components
 
-| Component | Key Props | Notes |
-|-----------|-----------|-------|
-| `NumberInput` | `label`, `paramKey`, `defaultValue`, `min?`, `max?`, `step?`, `unit?`, `description?` | For numeric strategy params |
-| `SelectInput` | `label`, `paramKey`, `defaultValue`, `options: [{label,value}]`, `description?` | Dropdown |
-| `ToggleInput` | `label`, `paramKey`, `defaultValue`, `description?` | Boolean toggle switch |
-| `ParameterGroup` | `title`, `description?` (slot) | Groups inputs under a section |
+| Component        | Key Props                                                                             | Notes                         |
+| ---------------- | ------------------------------------------------------------------------------------- | ----------------------------- |
+| `NumberInput`    | `label`, `paramKey`, `defaultValue`, `min?`, `max?`, `step?`, `unit?`, `description?` | For numeric strategy params   |
+| `SelectInput`    | `label`, `paramKey`, `defaultValue`, `options: [{label,value}]`, `description?`       | Dropdown                      |
+| `ToggleInput`    | `label`, `paramKey`, `defaultValue`, `description?`                                   | Boolean toggle switch         |
+| `ParameterGroup` | `title`, `description?` (slot)                                                        | Groups inputs under a section |
 
 ### 5.5 Container Grid Layout (Important)
 
 The `Container` component uses **inline CSS styles** (not Tailwind classes) for grid/flex layout. This was a deliberate decision because Tailwind v4's class scanning can't pick up dynamically-constructed class names like `md:grid-cols-2` from runtime props. Using `style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}` guarantees the layout works.
 
 Components that should **span the full grid width** use `style={{ gridColumn: "1 / -1" }}`:
+
 - `StrategyHeader`, `Heading`, `Divider`, `InfoBox`
 
 ---
@@ -224,12 +232,12 @@ Components that should **span the full grid width** use `style={{ gridColumn: "1
 
 Client-side routing via `App.tsx` using `window.history.pushState` + `popstate`. No router library.
 
-| Path | Component | Page |
-|------|-----------|------|
-| `/` | `Dashboard` | Strategy grid, stats |
-| `/strategy` | `StrategyBuilder` | New strategy |
-| `/strategy/:id` | `StrategyBuilder` | Edit existing |
-| `/settings` | `Settings` | Exchange secrets |
+| Path            | Component         | Page                 |
+| --------------- | ----------------- | -------------------- |
+| `/`             | `Dashboard`       | Strategy grid, stats |
+| `/strategy`     | `StrategyBuilder` | New strategy         |
+| `/strategy/:id` | `StrategyBuilder` | Edit existing        |
+| `/settings`     | `Settings`        | Exchange secrets     |
 
 Server routes in `index.ts` mirror these for SPA fallback: `"/": index, "/dashboard": index, "/settings": index, "/strategy": index, "/strategy/:slug": index`.
 
@@ -238,6 +246,7 @@ Server routes in `index.ts` mirror these for SPA fallback: `"/": index, "/dashbo
 `Layout.tsx` — 60px narrow sidebar (icon-based, Cursor/VS Code style) + main content.
 
 Sidebar items:
+
 - **Logo** ("t" in gold gradient square) → navigates to `/`
 - **Dashboard** (4-square grid icon) → `/`
 - **New Strategy** (+ icon) → `/strategy`
@@ -249,10 +258,12 @@ Hover: tooltip appears to the right.
 ### 6.3 Strategy Builder (the core page)
 
 Split view:
+
 - **Left (420px):** Chat panel — messages, thinking display, input
 - **Right (flex-1):** Preview panel — Visual | Code | Spec tabs
 
 **Chat flow:**
+
 1. User types → `POST /api/chat` (SSE stream)
 2. Thinking tokens → shown in live ThinkingBubble (auto-scrolling, violet themed)
 3. When first text token arrives → thinking collapses to a toggleable "Thinking" chip, assistant message starts streaming
@@ -265,6 +276,7 @@ Split view:
 10. `useUIStream` streams patches → `Renderer` renders bento grid
 
 **Three tabs:**
+
 - **Visual** — `<Renderer>` with json-render (the bento dashboard)
 - **Code** — Strategy TypeScript code rendered via Streamdown
 - **Spec** — Raw JSON spec rendered via Streamdown
@@ -274,6 +286,7 @@ Split view:
 ## 7. Known Issues & Polish Needed
 
 ### 7.1 Code Block Colors (RESOLVED)
+
 **Root cause (two compounding bugs):**
 
 1. **Wrong themes used.** Streamdown's context prefers `plugins.code.getThemes()` over the `shikiTheme` prop. The default `code` export from `@streamdown/code` calls `createCodePlugin()` with no args, so `getThemes()` returns `["github-light", "github-dark"]` — ignoring the `sdTheme` prop entirely.
@@ -281,16 +294,20 @@ Split view:
 2. **Inline `color` overrides Tailwind dark: variant.** Shiki v3's `flatTokenVariants()` (in `@shikijs/core`) sets `mergedStyles["color"] = value` for the default theme's color key (`idx === 0` when `defaultColor` is truthy). This ends up in `token.htmlStyle`, which Streamdown spreads into the element's inline `style`. Inline styles always beat Tailwind class-based rules — so the light theme's `color: #24292e` overrides `dark:text-[var(--shiki-dark,...)]`.
 
 **Fix applied:**
+
 - Use `createCodePlugin({ themes: ["github-dark-high-contrast", "github-dark-high-contrast"] })` so `getThemes()` returns correct themes
 - CSS override `[data-streamdown="code-block-body"] code > span > span { color: var(--shiki-dark, var(--sdm-c, inherit)) !important; }` to reclaim control from inline styles
 
 ### 7.2 Template Variables in FlowBlock Labels
+
 The Haiku UI generation sometimes uses template syntax like `{{ interval }}` or `{{ buyAmount }}` in FlowBlock labels and MetricCard values instead of hardcoding defaults. The system prompt has rules against this, but LLMs occasionally ignore rules. More aggressive prompting or post-processing (regex-replace template vars with param defaults) would fix this.
 
 ### 7.3 Bento Grid Spacing & Responsiveness (SPACING RESOLVED)
+
 **Spacing root cause:** Compound padding from three layers: preview wrapper (`px-5 py-6` = 20px/24px), Container default gap (`md` = 12px), and ParameterGroup padding (`p-4` = 16px) all stacking.
 
 **Spacing fix applied:** Tightened all spacing layers:
+
 - Preview wrapper: `px-5 py-6` → `px-3 py-3` (12px all around)
 - Container grid gap: `sm=6, md=8, lg=12` (was 8/12/16)
 - Container padding: `sm=6, md=10, lg=16` (was 8/16/24)
@@ -303,56 +320,60 @@ The Haiku UI generation sometimes uses template syntax like `{{ interval }}` or 
 **Responsiveness still needed:** The grid uses `repeat(2, minmax(0, 1fr))` via inline styles. This gives a 2-column layout on all screen sizes. On mobile, the grid should become 1 column — adding `@media (max-width: 768px)` to force single column or using a ResizeObserver would fix this.
 
 ### 7.4 Parameter State Binding
+
 Interactive inputs (NumberInput, SelectInput, ToggleInput) use local `useState` rather than json-render's `useStateBinding`. This means:
+
 - Changing a param in the UI updates local component state
 - But it doesn't flow back to `strategyParams` via the `updateParam` action (the action is logged but not wired to re-render other components)
 - To fully close the loop: use json-render's `useStateBinding("/paramKey")` in each input, and have the spec reference state paths in FlowBlock labels
 
 ### 7.5 Chat Scroll
+
 The chat auto-scrolls on new messages and thinking updates via `ref.scrollIntoView({ behavior: "smooth" })`. This works well but can fight with the user if they've manually scrolled up. A "scroll to bottom" button (like Cursor's) would improve UX.
 
 ### 7.6 Strategy Persistence
+
 Currently the strategy code, parameters, and chat history are generated and held in React state but NOT automatically saved to Prisma. The "Save Draft" button is not wired up. Wiring it to `POST /api/strategies` or `PUT /api/strategies/:id` with the current state would persist strategies.
 
 ---
 
 ## 8. File Reference
 
-| File | Purpose |
-|------|---------|
-| `src/index.html` | HTML shell. Has `class="dark"`, Google Fonts, SVG favicon |
-| `src/index.css` | Tailwind v4 theme, animations, Streamdown dark overrides |
-| `src/frontend.tsx` | React mount point |
-| `src/App.tsx` | Client-side router + page switching |
-| `src/components/Layout.tsx` | Sidebar + main content shell |
-| `src/pages/Dashboard.tsx` | Strategy grid, stats, create CTA |
-| `src/pages/StrategyBuilder.tsx` | The core page — chat + preview |
-| `src/pages/Settings.tsx` | Exchange secret management (Binance, RobinPump) |
-| `src/lib/catalog.ts` | json-render component catalog (Zod schemas) |
-| `src/lib/registry.tsx` | React implementations for catalog components |
-| `src/lib/runtime.ts` | Strategy execution runtime (eval-based) |
-| `src/index.ts` | Bun.serve() — API routes + SPA serving |
-| `src/db.ts` | Prisma client (libsql adapter) |
-| `prisma/schema.prisma` | Database schema (ExchangeSecret, Strategy) |
+| File                            | Purpose                                                   |
+| ------------------------------- | --------------------------------------------------------- |
+| `src/index.html`                | HTML shell. Has `class="dark"`, Google Fonts, SVG favicon |
+| `src/index.css`                 | Tailwind v4 theme, animations, Streamdown dark overrides  |
+| `src/frontend.tsx`              | React mount point                                         |
+| `src/App.tsx`                   | Client-side router + page switching                       |
+| `src/components/Layout.tsx`     | Sidebar + main content shell                              |
+| `src/pages/Dashboard.tsx`       | Strategy grid, stats, create CTA                          |
+| `src/pages/StrategyBuilder.tsx` | The core page — chat + preview                            |
+| `src/pages/Settings.tsx`        | Exchange secret management (Binance, RobinPump)           |
+| `src/lib/catalog.ts`            | json-render component catalog (Zod schemas)               |
+| `src/lib/registry.tsx`          | React implementations for catalog components              |
+| `src/lib/runtime.ts`            | Strategy execution runtime (eval-based)                   |
+| `src/index.ts`                  | Bun.serve() — API routes + SPA serving                    |
+| `src/db.ts`                     | Prisma client (libsql adapter)                            |
+| `prisma/schema.prisma`          | Database schema (ExchangeSecret, Strategy)                |
 
 ---
 
 ## 9. Dependencies
 
-| Package | Version | Role |
-|---------|---------|------|
-| `react` / `react-dom` | 19 | UI framework |
-| `tailwindcss` | 4.1 | Utility CSS (v4 with `@theme`) |
-| `bun-plugin-tailwind` | 0.1.2 | Tailwind integration for Bun |
-| `streamdown` | 2.2.0 | Streaming markdown renderer |
-| `@streamdown/code` | 1.0.2 | Shiki syntax highlighting plugin |
-| `@json-render/core` | 0.5.2 | Component catalog + spec system |
-| `@json-render/react` | 0.5.2 | React renderer + hooks |
-| `ai` | 6.0.78 | Vercel AI SDK (streamText, etc.) |
-| `@ai-sdk/anthropic` | 3.0.41 | Claude provider |
-| `@prisma/client` | 7.3.0 | Database ORM |
-| `viem` | 2.45.3 | Ethereum/Base chain interaction |
-| `zod` | 4.x | Schema validation (required by json-render) |
+| Package               | Version | Role                                        |
+| --------------------- | ------- | ------------------------------------------- |
+| `react` / `react-dom` | 19      | UI framework                                |
+| `tailwindcss`         | 4.1     | Utility CSS (v4 with `@theme`)              |
+| `bun-plugin-tailwind` | 0.1.2   | Tailwind integration for Bun                |
+| `streamdown`          | 2.2.0   | Streaming markdown renderer                 |
+| `@streamdown/code`    | 1.0.2   | Shiki syntax highlighting plugin            |
+| `@json-render/core`   | 0.5.2   | Component catalog + spec system             |
+| `@json-render/react`  | 0.5.2   | React renderer + hooks                      |
+| `ai`                  | 6.0.78  | Vercel AI SDK (streamText, etc.)            |
+| `@ai-sdk/anthropic`   | 3.0.41  | Claude provider                             |
+| `@prisma/client`      | 7.3.0   | Database ORM                                |
+| `viem`                | 2.45.3  | Ethereum/Base chain interaction             |
+| `zod`                 | 4.x     | Schema validation (required by json-render) |
 
 ---
 
@@ -361,6 +382,7 @@ Currently the strategy code, parameters, and chat history are generated and held
 ### 10.1 Strategy Code Generation (Sonnet 4.5)
 
 System prompt in `STRATEGY_SYSTEM` constant. Key rules:
+
 - Output is a chat reply + fenced TypeScript code block
 - Code must have comment header: `// Strategy: {name}`, `// Exchange: {exchange}`, `// Description: {desc}`
 - Every configurable value gets a `// @param {name} {type} {default} {description}` comment
@@ -371,6 +393,7 @@ System prompt in `STRATEGY_SYSTEM` constant. Key rules:
 ### 10.2 UI Generation (Haiku 4.5)
 
 System prompt generated by `catalog.prompt()` + custom `system` and `customRules` overrides. Key rules:
+
 - Output raw SpecStream (JSON patch lines, no markdown fences)
 - Root Container must be `layout="grid" columns="2"` for bento layout
 - Must include interactive inputs for every `@param`
@@ -380,6 +403,7 @@ System prompt generated by `catalog.prompt()` + custom `system` and `customRules
 ### 10.3 Strategy Metadata Parsing
 
 After Sonnet generates code, the frontend extracts:
+
 1. **Code:** regex `/ ```typescript\n([\s\S]*?)``` /`
 2. **Name:** `// Strategy: (.+)`
 3. **Exchange:** `// Exchange: (.+)`
@@ -388,6 +412,7 @@ After Sonnet generates code, the frontend extracts:
 6. **State object:** Built from params — numbers parsed to float, booleans parsed, strings kept as-is
 
 This metadata is used to:
+
 - Set `strategyParams` (passed to `StateProvider`)
 - Construct the prompt for Haiku UI generation
 - Display in the Code tab
@@ -422,4 +447,5 @@ bg-gold/[0.12] text-gold + absolute left bar w-[3px] bg-gold rounded-r-full
 ```
 
 ### Icons
+
 All icons are inline SVGs (no icon library). They use `stroke="currentColor"` with `strokeWidth="1.5"` and `strokeLinecap="round"`. The icon catalog in FlowBlock maps names to SVG elements: `clock`, `chart`, `bolt`, `coins`, `alert`, `repeat`.
