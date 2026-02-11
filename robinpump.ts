@@ -32,6 +32,13 @@ const FEE_RECEIVER_ADDRESS = getAddress("0xAEE44C38633f7eD683c0c61840663c04D6C4C
 /** Clanker v4.0.0 — used for graduated token deployment to Uniswap V4. */
 const CLANKER_ADDRESS = getAddress("0xe85a59c628f7d27878aceb4bf3b35733630083a9");
 
+// ─── Trading constants ────────────────────────────────────────────────
+
+const BPS = 10_000n;
+// RobinPump charges a platform fee on buys/sells (1%).
+const PLATFORM_FEE_BPS = 100n;
+const PLATFORM_FEE_FACTOR_BPS = BPS - PLATFORM_FEE_BPS;
+
 // ─── ABIs (minimal, only what we need) ───────────────────────────────
 
 const factoryAbi = parseAbi([
@@ -39,6 +46,9 @@ const factoryAbi = parseAbi([
 ]);
 
 const pairAbi = parseAbi([
+  // Errors (for decoding bubbled-up reverts)
+  "error SlippageExceeded()",
+
   "function buy(uint256 minTokensOut, uint256 deadline) payable",
   "function sell(uint256 tokensToSell, uint256 minEthOut, uint256 deadline)",
   "function token() view returns (address)",
@@ -112,6 +122,7 @@ interface MarketCapInfo {
 interface TxResult {
   hash: Hash;
   receipt: TransactionReceipt;
+  approval?: { hash: Hash; receipt: TransactionReceipt };
 }
 
 interface CoinListing {
@@ -172,6 +183,10 @@ interface SubgraphTrade {
   timestamp: number;
   txHash: string;
 }
+
+// ─── Metadata cache ─────────────────────────────────────────────────
+
+const metadataCache = new Map<string, CoinMetadata | null>();
 
 // ─── Client ──────────────────────────────────────────────────────────
 
@@ -391,9 +406,31 @@ class RobinPump {
     const pair = getAddress(pairAddress);
     const value = parseEther(ethAmount);
 
-    // If slippage > 0, estimate expected tokens and set minOut.
-    // For now, use 0 (no slippage protection) — fine for hackathon.
-    const minTokensOut = 0n;
+    let slippageBps = 0;
+    if (Number.isFinite(slippage) && slippage > 0) {
+      slippageBps = Math.round(slippage * 10_000);
+      if (slippageBps < 0) slippageBps = 0;
+      if (slippageBps > 5000) slippageBps = 5000;
+    }
+
+    let minTokensOut = 0n;
+    if (slippageBps > 0) {
+      const info = await this.getPairInfo(pairAddress);
+      const ethReserve = info.ethBalance;
+      const tokenReserve = info.tokenBalance;
+
+      // Constant-product estimate (best-effort) with platform fee.
+      const ethInAfterFee = (value * PLATFORM_FEE_FACTOR_BPS) / BPS;
+      const k = ethReserve * tokenReserve;
+      const newEthReserve = ethReserve + ethInAfterFee;
+      const newTokenReserve = newEthReserve > 0n ? k / newEthReserve : 0n;
+
+      let expectedTokensOut = 0n;
+      if (newTokenReserve < tokenReserve) expectedTokensOut = tokenReserve - newTokenReserve;
+
+      minTokensOut = (expectedTokensOut * BigInt(10_000 - slippageBps)) / BPS;
+      if (minTokensOut > 0n) minTokensOut -= 1n; // rounding safety
+    }
 
     const hash = await this.walletClient.writeContract({
       address: pair,
@@ -420,8 +457,9 @@ class RobinPump {
    * @param tokenAddress  The ERC-20 token address.
    * @param tokenAmount   Raw token amount (bigint with 18 decimals).
    *                      Pass the result of getTokenBalance() to sell all.
+   * @param slippage      Fraction 0-1, e.g. 0.05 for 5 %. Defaults to 0.
    */
-  async sell(pairAddress: string, tokenAddress: string, tokenAmount: bigint): Promise<TxResult> {
+  async sell(pairAddress: string, tokenAddress: string, tokenAmount: bigint, slippage = 0): Promise<TxResult> {
     const pair = getAddress(pairAddress);
     const token = getAddress(tokenAddress);
 
@@ -433,6 +471,7 @@ class RobinPump {
       args: [this.account.address, pair],
     });
 
+    let approval: TxResult["approval"] = undefined;
     if (currentAllowance < tokenAmount) {
       const approveHash = await this.walletClient.writeContract({
         address: token,
@@ -440,9 +479,36 @@ class RobinPump {
         functionName: "approve",
         args: [pair, tokenAmount],
       });
-      await this.publicClient.waitForTransactionReceipt({
+      const approveReceipt = await this.publicClient.waitForTransactionReceipt({
         hash: approveHash,
       });
+      approval = { hash: approveHash, receipt: approveReceipt };
+    }
+
+    let slippageBps = 0;
+    if (Number.isFinite(slippage) && slippage > 0) {
+      slippageBps = Math.round(slippage * 10_000);
+      if (slippageBps < 0) slippageBps = 0;
+      if (slippageBps > 5000) slippageBps = 5000;
+    }
+
+    let minEthOut = 0n;
+    if (slippageBps > 0) {
+      const info = await this.getPairInfo(pairAddress);
+      const ethReserve = info.ethBalance;
+      const tokenReserve = info.tokenBalance;
+
+      // Constant-product estimate (best-effort) with platform fee.
+      const tokenInAfterFee = (tokenAmount * PLATFORM_FEE_FACTOR_BPS) / BPS;
+      const k = ethReserve * tokenReserve;
+      const newTokenReserve = tokenReserve + tokenInAfterFee;
+      const newEthReserve = newTokenReserve > 0n ? k / newTokenReserve : 0n;
+
+      let expectedEthOut = 0n;
+      if (newEthReserve < ethReserve) expectedEthOut = ethReserve - newEthReserve;
+
+      minEthOut = (expectedEthOut * BigInt(10_000 - slippageBps)) / BPS;
+      if (minEthOut > 0n) minEthOut -= 1n; // rounding safety
     }
 
     // Execute sell
@@ -450,13 +516,13 @@ class RobinPump {
       address: pair,
       abi: pairAbi,
       functionName: "sell",
-      args: [tokenAmount, 0n, this.deadline()],
+      args: [tokenAmount, minEthOut, this.deadline()],
     });
 
     const receipt = await this.publicClient.waitForTransactionReceipt({
       hash,
     });
-    return { hash, receipt };
+    return { hash, receipt, approval };
   }
 
   /**
@@ -891,6 +957,87 @@ class RobinPump {
     } catch {
       return null;
     }
+  }
+
+  // ── Metadata: Cached + Batch ─────────────────────────────────────
+
+  /**
+   * Fetch IPFS metadata with in-memory caching.
+   * Returns cached result if available, otherwise fetches and caches.
+   */
+  static async fetchMetadataCached(uri: string): Promise<CoinMetadata | null> {
+    const cached = metadataCache.get(uri);
+    if (cached !== undefined) return cached;
+    const meta = await RobinPump.fetchMetadata(uri);
+    metadataCache.set(uri, meta);
+    return meta;
+  }
+
+  /**
+   * Resolve an IPFS URI (or plain CID / HTTP URL) to a gateway URL.
+   */
+  static resolveImageUrl(ipfsUri: string): string {
+    if (ipfsUri.startsWith("ipfs://")) {
+      return `${IPFS_GATEWAY}/ipfs/${ipfsUri.slice(7)}`;
+    }
+    if (ipfsUri.startsWith("http")) return ipfsUri;
+    return `${IPFS_GATEWAY}/ipfs/${ipfsUri}`;
+  }
+
+  /**
+   * Fetch coins with their IPFS metadata attached.
+   * Metadata is fetched in parallel batches of 10 and cached.
+   */
+  static async fetchCoinsWithMetadata(
+    sort: "newest" | "marketCap" = "newest",
+    limit = 50,
+    offset = 0,
+  ): Promise<(SubgraphCoin & { metadata: CoinMetadata | null })[]> {
+    const coins = await RobinPump.fetchCoins(sort, limit, offset);
+    const results: (SubgraphCoin & { metadata: CoinMetadata | null })[] = [];
+
+    // Fetch metadata in parallel, batches of 10
+    for (let i = 0; i < coins.length; i += 10) {
+      const batch = coins.slice(i, i + 10);
+      const promises: Promise<CoinMetadata | null>[] = [];
+      for (const c of batch) {
+        promises.push(RobinPump.fetchMetadataCached(c.uri));
+      }
+      const metas = await Promise.all(promises);
+      for (let j = 0; j < batch.length; j++) {
+        const coin = batch[j];
+        const meta = metas[j];
+        if (coin !== undefined) {
+          results.push({ ...coin, metadata: meta ?? null });
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Fetch coins along with the current ETH/USD price.
+   * Falls back to $2500 if the price fetch fails.
+   */
+  static async fetchCoinsWithEthPrice(
+    sort: "newest" | "marketCap" = "newest",
+    limit = 50,
+    offset = 0,
+  ): Promise<{ coins: SubgraphCoin[]; ethUsdPrice: number }> {
+    const [coins, ethUsdPrice] = await Promise.all([
+      RobinPump.fetchCoins(sort, limit, offset),
+      RobinPump.getEthUsdPrice().catch(() => 2500),
+    ]);
+    return { coins, ethUsdPrice };
+  }
+
+  /**
+   * Compute approximate market cap in USD from subgraph coin data.
+   * Uses ethCollected as a proxy for bonding-curve value.
+   */
+  static computeMarketCapUsd(coin: SubgraphCoin, ethUsdPrice: number): number {
+    return coin.ethCollected * ethUsdPrice;
   }
 
   // ── Utilities ────────────────────────────────────────────────────
