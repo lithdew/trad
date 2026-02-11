@@ -1,0 +1,323 @@
+@import "tailwindcss";
+@source "../node_modules/streamdown/dist/*.js";
+@variant dark (&:is(.dark *));
+
+@theme {
+  --color-obsidian: #08080a;
+  --color-surface: #0e0e11;
+  --color-surface-2: #151518;
+  --color-surface-3: #1c1c20;
+  --color-surface-hover: #222226;
+  --color-border: #252529;
+  --color-border-light: #38383e;
+
+  --color-gold: #e5a00d;
+  --color-gold-bright: #f5c542;
+  --color-gold-dim: #8b6914;
+
+  --color-positive: #22c55e;
+  --color-negative: #ef4444;
+
+  --color-text: #eaeaed;
+  --color-text-secondary: #9898a3;
+  --color-text-muted: #5b5b66;
+
+  --font-display: "Syne", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  :root {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background: var(--color-obsidian);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-light);
+  }
+}
+
+/* ── Noise overlay ────────────────────────────────────────── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Animations ───────────────────────────────────────────── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-gold {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 160, 13, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(229, 160, 13, 0.08);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.45s ease-out both;
+}
+.animate-slide-left {
+  animation: slide-in-left 0.35s ease-out both;
+}
+.animate-slide-right {
+  animation: slide-in-right 0.35s ease-out both;
+}
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out both;
+}
+
+.stagger-1 {
+  animation-delay: 0.06s;
+}
+.stagger-2 {
+  animation-delay: 0.12s;
+}
+.stagger-3 {
+  animation-delay: 0.18s;
+}
+.stagger-4 {
+  animation-delay: 0.24s;
+}
+.stagger-5 {
+  animation-delay: 0.3s;
+}
+.stagger-6 {
+  animation-delay: 0.36s;
+}
+
+/* ── Gold gradient text ───────────────────────────────────── */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #f5c542 0%, #e5a00d 50%, #c88a08 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Dot grid background ──────────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Glass surface ────────────────────────────────────────── */
+.glass {
+  background: rgba(14, 14, 17, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ── Streamdown (markdown) dark theme ─────────────────────── */
+[data-streamdown="heading-1"],
+[data-streamdown="heading-2"],
+[data-streamdown="heading-3"] {
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-weight: 700;
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+}
+[data-streamdown="heading-1"] { font-size: 1.25rem; }
+[data-streamdown="heading-2"] { font-size: 1.1rem; }
+[data-streamdown="heading-3"] { font-size: 1rem; }
+
+[data-streamdown="strong"] {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+[data-streamdown="link"] {
+  color: var(--color-gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(229, 160, 13, 0.3);
+  transition: border-color 0.15s;
+}
+[data-streamdown="link"]:hover {
+  border-bottom-color: var(--color-gold);
+}
+
+[data-streamdown="inline-code"] {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  color: var(--color-gold-bright);
+}
+
+/* Code blocks — Streamdown uses dark: variants via --shiki-dark vars */
+[data-streamdown="code-block"] {
+  --shiki-dark-bg: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: 0.75rem;
+  margin: 0.75em 0;
+  overflow: hidden;
+  font-size: 0.82rem;
+}
+[data-streamdown="code-block"] pre,
+[data-streamdown="code-block"] code {
+  font-family: var(--font-mono) !important;
+}
+/*
+ * Force dark theme token colors on code spans.
+ * Shiki's flatTokenVariants() puts a direct `color` CSS property in htmlStyle
+ * for the default "light" slot, which as an inline style always beats Tailwind's
+ * dark:text-[var(--shiki-dark,...)] class. This override reclaims control.
+ */
+[data-streamdown="code-block-body"] code > span > span {
+  color: var(--shiki-dark, var(--sdm-c, inherit)) !important;
+}
+/* Header bar matches our surface */
+[data-streamdown="code-block-header"] {
+  background: var(--color-surface-3) !important;
+  color: var(--color-text-secondary) !important;
+  border-bottom: 1px solid var(--color-border);
+}
+
+[data-streamdown="blockquote"] {
+  border-left: 3px solid var(--color-gold-dim);
+  background: var(--color-surface-2);
+  margin: 0.75em 0;
+  padding: 0.5em 1em;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: var(--color-text-secondary);
+}
+
+[data-streamdown="ordered-list"],
+[data-streamdown="unordered-list"] {
+  padding-left: 1.4em;
+  margin: 0.3em 0;
+}
+
+[data-streamdown="list-item"] {
+  margin: 0.15em 0;
+}
+
+[data-streamdown="list-item"]::marker {
+  color: var(--color-text-muted);
+}
+
+[data-streamdown="horizontal-rule"] {
+  border-color: var(--color-border);
+  margin: 1em 0;
+}
+
+[data-streamdown="table-wrapper"] {
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+[data-streamdown="table"] {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  font-size: 0.85em;
+  width: 100%;
+}
+[data-streamdown="table-header"] {
+  background: var(--color-surface-2);
+}
+[data-streamdown="table-header-cell"],
+[data-streamdown="table-cell"] {
+  padding: 0.4em 0.75em;
+  border-bottom: 1px solid var(--color-border);
+}
+[data-streamdown="table-header-cell"] {
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: left;
+}
+[data-streamdown="table-cell"] {
+  color: var(--color-text-secondary);
+}
+
+/* ── Responsive bento grid — collapse to 1 column on narrow screens ── */
+@media (max-width: 640px) {
+  .bento-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (prefers-reduced-motion) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

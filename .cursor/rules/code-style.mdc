@@ -1,0 +1,56 @@
+---
+description: TypeScript code style and quality standards
+globs: **/*.ts
+alwaysApply: true
+---
+
+# Code Style
+
+Always ensure the code you write to this codebase adhere to these best practices.
+
+- Ensure full end-to-end type safety. No type casts (`as`), `any`, or `unknown`. These are permitted only when achieving full type safety would be overcomplicated.
+- No IIFEs.
+- Prefer procedural/iterative/imperative code. Do not use `.map`, `.filter`, `.reduce`, or other functional helpers.
+- Use optional chaining (`?.`) and nullish coalescing (`??`) over ternaries when it improves readability and reduces lines of code.
+- Do not create tiny helper functions; inline logic when possible. In particular, never wrap a single expression in a named function (e.g. `function format(x) { return x.toISOString(); }`) — just use the expression at the call site.
+- Use `interface` (not `type`) for object shape types.
+- Do not annotate function return types; keep them implicit. Use `ReturnType<typeof fn>` when you need the type elsewhere.
+- Use explicit `=== null`, `=== undefined`, or `== null` checks instead of truthy/falsy checks (`!value`, `if (value)`). Falsy checks swallow valid values like `0`, `""`, and `false`.
+- Early-return on errors and edge cases to minimize nesting and keep the happy path unindented (guard-clause style, like Go).
+- Prefer `for (const item of items)` over index-based `for (let i = 0; ...)` loops. Use index loops only when the index is actually needed.
+
+```typescript
+// ❌ BAD
+if (!user) return;
+const label = name || 'default';
+const name = user ? user.name : undefined;
+const items = data.map((d) => d.id);
+type UserShape = { id: string; name: string };
+function getUser(): User { ... }
+for (let i = 0; i < users.length; i++) { console.log(users[i]); }
+function process(input: string) {
+  if (isValid(input)) {
+    // ... deeply nested happy path ...
+  } else {
+    throw new Error('invalid');
+  }
+}
+
+// ✅ GOOD
+if (user == null) return;
+const label = name ?? 'default';
+const name = user?.name;
+const items: string[] = [];
+for (const d of data) { items.push(d.id); }
+interface UserShape { id: string; name: string }
+function getUser() { ... }
+for (const user of users) { console.log(user); }
+function process(input: string) {
+  if (!isValid(input)) throw new Error('invalid');
+  // happy path at top level
+}
+```
+
+---
+
+## alwaysApply: true

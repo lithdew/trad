@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+  engineType = "client"
+  runtime    = "bun"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model ExchangeSecret {
+  id            String   @id @default(cuid())
+  exchange      String   @unique // "binance" | "robinpump"
+  apiKey        String
+  apiSecret     String
+  walletAddress String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Strategy {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  exchange    String // "binance" | "robinpump"
+  status      String    @default("draft") // draft | active | paused | error
+  code        String? // Generated TypeScript strategy code
+  config      String? // JSON string of the json-render UI spec
+  parameters  String? // JSON string of user-configurable parameters { key: { value, type, min?, max?, ... } }
+  chatHistory String? // JSON string of chat messages for iteration
+  lastRun     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
