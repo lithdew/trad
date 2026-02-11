@@ -164,21 +164,17 @@ The `useUIStream` hook applies patches progressively to build the spec.
 
 ### 4.3 Vercel AI SDK v6
 
-**Packages:** `ai` v6.0.78, `@ai-sdk/anthropic` v3.0.41  
+**Packages:** `ai` v6.0.78, `@ai-sdk/anthropic` v3.0.41, `@ai-sdk/react` v3.0.81  
 **Two models:**
 
 - **Claude Sonnet 4.5** (`claude-sonnet-4-5`) — strategy code gen + chat, with extended thinking (`budgetTokens: 10000`)
 - **Claude Haiku 4.5** (`claude-haiku-4-5`) — UI spec generation (fast, cheap)
 
-**Chat endpoint (`/api/chat`):** Custom SSE stream format:
+**Chat endpoint (`/api/chat`):** Uses `streamText().toUIMessageStreamResponse({ sendReasoning: true })` — the standard UIMessageStream data stream protocol (SSE with structured message parts: `text-start`, `text-delta`, `text-end`, `reasoning-start`, `reasoning-delta`, `reasoning-end`, `start`, `finish`, etc.). The server receives `UIMessage[]` from the client, converts them via `convertToModelMessages()`, and streams structured responses back.
 
-```
-data: {"type":"thinking","text":"..."}    ← reasoning tokens
-data: {"type":"text","text":"..."}        ← assistant text tokens
-data: {"type":"done"}                     ← stream complete
-```
+**Frontend chat:** Uses `useChat` hook from `@ai-sdk/react` with `DefaultChatTransport` from `ai`. Messages are `UIMessage` objects with `parts` arrays containing `text` and `reasoning` part types. The hook manages message state, streaming status (`submitted` | `streaming` | `ready` | `error`), and automatic message updates.
 
-**UI endpoint (`/api/generate`):** Standard `streamText.toTextStreamResponse()` — outputs raw SpecStream lines.
+**UI endpoint (`/api/generate`):** Standard `streamText.toTextStreamResponse()` — outputs raw SpecStream lines. This uses a text stream because it's consumed by `@json-render/react`'s `useUIStream` hook which expects plain text JSON patch lines.
 
 ---
 
@@ -266,18 +262,20 @@ Split view:
 - **Left (420px):** Chat panel — messages, thinking display, input
 - **Right (flex-1):** Preview panel — Visual | Code | Spec tabs
 
-**Chat flow:**
+**Chat flow (using UIMessageStream + `useChat`):**
 
-1. User types → `POST /api/chat` (SSE stream)
-2. Thinking tokens → shown in live ThinkingBubble (auto-scrolling, violet themed)
-3. When first text token arrives → thinking collapses to a toggleable "Thinking" chip, assistant message starts streaming
-4. Assistant text updates token-by-token via `setMessages` index update
-5. Streamdown renders progressively with `isAnimating={true}` + `animated={{ animation: "blurIn", duration: 200, easing: "ease-out" }}`
-6. When stream ends → `isStreaming` set to false, animation stops
-7. Code extracted from the response via regex (`/```typescript\n([\s\S]*?)```/`)
-8. `@param` comments parsed → `strategyParams` state built → passed to `StateProvider`
-9. Auto-trigger `POST /api/generate` with strategy summary → Haiku generates UI spec
-10. `useUIStream` streams patches → `Renderer` renders bento grid
+1. User types → `sendMessage({ text }, { body: { currentCode } })` via `useChat` hook
+2. `DefaultChatTransport` sends `UIMessage[]` + body to `POST /api/chat`
+3. Server converts with `convertToModelMessages()`, calls `streamText()`, returns `toUIMessageStreamResponse({ sendReasoning: true })`
+4. `useChat` automatically manages message state via UIMessageStream protocol
+5. Reasoning parts (type `reasoning`, state `streaming`) → shown as live `LiveReasoningBubble` (auto-scrolling, violet themed)
+6. When reasoning completes → collapses to toggleable `CollapsedReasoning` chip
+7. Text parts (type `text`, state `streaming`) → rendered progressively via Streamdown with `isAnimating={true}`
+8. When stream finishes → `onFinish` callback fires with the completed `UIMessage`
+9. Code extracted from text parts via regex (`/```typescript\n([\s\S]*?)```/`)
+10. `@param` comments parsed → `strategyParams` state built → passed to `StateProvider`
+11. Auto-trigger `POST /api/generate` with strategy summary → Haiku generates UI spec
+12. `useUIStream` streams patches → `Renderer` renders bento grid
 
 **Three tabs:**
 
@@ -373,8 +371,9 @@ Currently the strategy code, parameters, and chat history are generated and held
 | `@streamdown/code`    | 1.0.2   | Shiki syntax highlighting plugin            |
 | `@json-render/core`   | 0.5.2   | Component catalog + spec system             |
 | `@json-render/react`  | 0.5.2   | React renderer + hooks                      |
-| `ai`                  | 6.0.78  | Vercel AI SDK (streamText, etc.)            |
+| `ai`                  | 6.0.78  | Vercel AI SDK (streamText, UIMessageStream) |
 | `@ai-sdk/anthropic`   | 3.0.41  | Claude provider                             |
+| `@ai-sdk/react`       | 3.0.81  | React hooks (useChat) for AI SDK UI         |
 | `@prisma/client`      | 7.3.0   | Database ORM                                |
 | `viem`                | 2.45.3  | Ethereum/Base chain interaction             |
 | `zod`                 | 4.x     | Schema validation (required by json-render) |
