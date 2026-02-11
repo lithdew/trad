@@ -1,0 +1,9 @@
+[profile.default]
+src = "contracts"
+out = "contracts/out"
+test = "contracts/test"
+libs = ["lib"]
+
+optimizer = true
+optimizer_runs = 200
+
