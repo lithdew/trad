@@ -748,8 +748,7 @@ function ChatBubble({ msg }: { msg: Msg }) {
         {expanded && (
           <div className="text-[12.5px] leading-[1.7] text-violet-300/70 max-h-52 overflow-y-auto border-l-2 border-violet-400/20 pl-3.5 ml-2.5 mt-1">
             <Streamdown
-              plugins={sdPlugins}
-              animated={{ animation: "fadeIn", duration: 100 }}
+              animated={{ animation: "blurIn", duration: 100 }}
               isAnimating={false}
               mode="static"
             >
@@ -780,7 +779,7 @@ function ChatBubble({ msg }: { msg: Msg }) {
       <div className={`text-[13.5px] leading-[1.65] pl-7 ${isAI ? "text-text-secondary" : "text-text"}`}>
         <Streamdown
           plugins={sdPlugins}
-          animated={{ animation: "fadeIn", duration: 120 }}
+          animated={{ animation: "blurIn", duration: 200, easing: "ease-out" }}
           isAnimating={!!msg.isStreaming}
         >
           {msg.content}
@@ -806,8 +805,7 @@ function ThinkingBubble({ text, endRef }: { text: string; endRef: React.RefObjec
       </div>
       <div className="text-[12.5px] leading-[1.7] text-violet-300/60 max-h-32 overflow-y-auto border-l-2 border-violet-400/15 pl-3.5 ml-2.5">
         <Streamdown
-          plugins={sdPlugins}
-          animated={{ animation: "fadeIn", duration: 80 }}
+          animated={{ animation: "blurIn", duration: 150, easing: "ease-out" }}
           isAnimating={true}
         >
           {text.slice(-800)}

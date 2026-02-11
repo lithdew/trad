@@ -113,7 +113,7 @@ const sdPlugins = { code: sdCodePlugin };
 
 <Streamdown
   plugins={sdPlugins}
-  animated={{ animation: "fadeIn", duration: 120 }}
+  animated={{ animation: "blurIn", duration: 200, easing: "ease-out" }}
   isAnimating={!!msg.isStreaming}
 >
   {msg.content}
@@ -127,6 +127,10 @@ const sdPlugins = { code: sdCodePlugin };
 - Custom dark theme overrides via `[data-streamdown="..."]` selectors in `index.css`
 
 **Resolved issue — code block colors:** Fixed by using `createCodePlugin` with explicit themes (the default export ignores the `shikiTheme` prop) AND a CSS `!important` override to beat shiki's inline `color` style. See section 7.1 for full root cause analysis.
+
+**Animation:** Uses `blurIn` animation (blur-to-sharp + opacity) instead of `fadeIn`. This masks batch token arrivals better with fast-streaming models. Duration is 200ms with `ease-out` easing for natural deceleration.
+
+**Thinking blocks:** Streamdown in thinking blocks (both live `ThinkingBubble` and collapsed thinking chips) does NOT receive `plugins={sdPlugins}`. This prevents code blocks and other UI blocks from rendering inside thinking content, keeping it as simple formatted text. Only assistant chat messages get the full code plugin for rich rendering.
 
 ### 4.2 json-render (AI-generated UI)
 
@@ -268,7 +272,7 @@ Split view:
 2. Thinking tokens → shown in live ThinkingBubble (auto-scrolling, violet themed)
 3. When first text token arrives → thinking collapses to a toggleable "Thinking" chip, assistant message starts streaming
 4. Assistant text updates token-by-token via `setMessages` index update
-5. Streamdown renders progressively with `isAnimating={true}` + `animated={{ animation: "fadeIn", duration: 120 }}`
+5. Streamdown renders progressively with `isAnimating={true}` + `animated={{ animation: "blurIn", duration: 200, easing: "ease-out" }}`
 6. When stream ends → `isStreaming` set to false, animation stops
 7. Code extracted from the response via regex (`/```typescript\n([\s\S]*?)```/`)
 8. `@param` comments parsed → `strategyParams` state built → passed to `StateProvider`
