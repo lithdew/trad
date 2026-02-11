@@ -25,7 +25,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # caches
 .eslintcache
 .cache
-cache
+/cache
 *.tsbuildinfo
 
 # IntelliJ based IDEs
@@ -45,7 +45,7 @@ generated/prisma
 .cursor/skills/
 
 # Foundry dependencies (install via `forge install`)
-lib/
+/lib/
 
 # Solidity artifacts
-contracts/out/
+/contracts/out/
