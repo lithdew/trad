@@ -36,6 +36,11 @@ function getBearerToken(req: Request) {
     req.headers.get("X-Trad-Admin-Token");
   if (headerToken !== null && headerToken !== "") return headerToken;
 
+  // Fallback: query parameter (for libraries like useUIStream that don't support custom headers)
+  const url = new URL(req.url);
+  const qsToken = url.searchParams.get("_t");
+  if (qsToken !== null && qsToken !== "") return qsToken;
+
   return null;
 }
 

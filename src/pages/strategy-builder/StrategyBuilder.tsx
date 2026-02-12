@@ -35,6 +35,7 @@ import {
   stopStrategy,
   queryClient,
   queryKeys,
+  getAdminAuthHeaders,
   type StrategyPayload,
 } from "../../lib/api";
 import { Button } from "@/components/ui/button";
@@ -445,7 +446,11 @@ function StrategyBuilderInner({
     isStreaming: isUIStreaming,
     send: sendToGenerate,
   } = useUIStream({
-    api: "/api/generate",
+    api: (() => {
+      const h = getAdminAuthHeaders();
+      const t = h.Authorization?.replace(/^Bearer\s+/i, "") ?? "";
+      return t !== "" ? `/api/generate?_t=${encodeURIComponent(t)}` : "/api/generate";
+    })(),
     onError: (err) => {
       console.error("UI gen error:", err);
       toast.error("Dashboard generation failed — try sending another message");
@@ -481,7 +486,10 @@ function StrategyBuilderInner({
   const paramAutoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoSaveErrorAtRef = useRef(0);
 
-  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: "/api/chat", headers: () => getAdminAuthHeaders() }),
+    [],
+  );
 
   // Compute initial messages — use saved history if available, otherwise welcome
   const initialMessages = useMemo((): UIMessage[] => {

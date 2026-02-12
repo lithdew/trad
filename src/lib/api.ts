@@ -71,7 +71,7 @@ export interface SettingsConnection {
   updatedAt: string;
 }
 
-function getAdminAuthHeaders() {
+export function getAdminAuthHeaders() {
   const headers: Record<string, string> = {};
   if (typeof window === "undefined") return headers;
   const token = localStorage.getItem("trad_admin_token");
