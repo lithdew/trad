@@ -1,10 +1,10 @@
 import { http, createConfig } from "wagmi";
-import { base } from "wagmi/chains";
-import { coinbaseWallet, injected } from "wagmi/connectors";
+import { base } from "viem/chains";
+import { coinbaseWallet, injected, metaMask } from "wagmi/connectors";
 
 export const wagmiConfig = createConfig({
   chains: [base],
-  connectors: [coinbaseWallet({ appName: "trad" }), injected()],
+  connectors: [coinbaseWallet({ appName: "trad" }), injected(), metaMask()],
   transports: {
     [base.id]: http(),
   },
