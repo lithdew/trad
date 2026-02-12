@@ -4,7 +4,7 @@
 
 trad is an AI-powered platform that turns plain-English intent into real, deployable trading strategies on [RobinPump.fun](https://robinpump.fun) (Base). Describe what you want in chat, get working TypeScript strategy code + a live visual dashboard, and deploy it to run automatically with strict safety rails. In testing, a single strategy executed over 100 real on-chain trades in just a few minutes — every trade a verifiable transaction on the Base blockchain.
 
-Built solo in 24 hours at the [EasyA x Consensus Hong Kong Hackathon](https://consensus-hongkong.coindesk.com/hackathon/).
+Built solo in 24 hours at the [EasyA x Consensus Hong Kong Hackathon](https://consensus-hongkong.coindesk.com/hackathon/). During the hackathon, trad executed **1,069 on-chain trades** — the most of any participant on the leaderboard — all from a single wallet: [`0x2738652FDc4b6682620Aa42e0786D989930979cE`](https://basescan.org/address/0x2738652fdc4b6682620aa42e0786d989930979ce).
 
 **TradDelegate smart contract on Base Mainnet:** [`0x06847d8d174454f36f31f1f6a22206e43032c0cb`](https://basescan.org/address/0x06847d8d174454f36f31f1f6a22206e43032c0cb)
 
@@ -18,20 +18,20 @@ Built solo in 24 hours at the [EasyA x Consensus Hong Kong Hackathon](https://co
 
 ## Screenshots
 
-| New Strategy — AI Chat | AI Chat + Code View |
-| --- | --- |
+| New Strategy — AI Chat                   | AI Chat + Code View                        |
+| ---------------------------------------- | ------------------------------------------ |
 | ![New Strategy](assets/new-strategy.png) | ![AI Chat + Code](assets/ai-chat-code.png) |
 
-| Visual Dashboard | WHEN/IF/THEN Flow + Parameters |
-| --- | --- |
+| Visual Dashboard                                 | WHEN/IF/THEN Flow + Parameters                      |
+| ------------------------------------------------ | --------------------------------------------------- |
 | ![Visual Dashboard](assets/visual-dashboard.png) | ![Flow + Parameters](assets/visual-flow-params.png) |
 
-| Live Trading + Performance | Performance — PnL Waterfall |
-| --- | --- |
+| Live Trading + Performance               | Performance — PnL Waterfall            |
+| ---------------------------------------- | -------------------------------------- |
 | ![Live Trading](assets/live-trading.png) | ![Performance](assets/performance.png) |
 
-| Strategy Marketplace | TradDelegate On-Chain Smoke Test |
-| --- | --- |
+| Strategy Marketplace                   | TradDelegate On-Chain Smoke Test                       |
+| -------------------------------------- | ------------------------------------------------------ |
 | ![Marketplace](assets/marketplace.png) | ![Delegate Smoke Test](assets/delegate-smoke-test.png) |
 
 ---
