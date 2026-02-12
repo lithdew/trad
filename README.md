@@ -12,27 +12,7 @@ Built solo in 24 hours at the [EasyA x Consensus Hong Kong Hackathon](https://co
 
 ## Demo
 
-<!-- TODO: Replace with your Loom / YouTube link -->
-
-**Demo video:** [Watch on Loom](#)
-
-**Repo walkthrough video (with audio):** [Watch on Loom](#)
-
----
-
-## Screenshots
-
-| Dashboard                                     | Strategy Builder                                            |
-| --------------------------------------------- | ----------------------------------------------------------- |
-| ![Dashboard](assets/screenshot-dashboard.png) | ![Strategy Builder](assets/screenshot-strategy-builder.png) |
-
-| AI Chat + Live Trades                                 | Strategy Logs                                         |
-| ----------------------------------------------------- | ----------------------------------------------------- |
-| ![Strategy Chat](assets/screenshot-strategy-chat.png) | ![Strategy Logs](assets/screenshot-strategy-logs.png) |
-
-| Settings                                    |
-| ------------------------------------------- |
-| ![Settings](assets/screenshot-settings.png) |
+**Demo + repo walkthrough video:** [Watch on Loom](https://www.loom.com/share/c3e5763673a949b098e3375e0e7927b9)
 
 ---
 
@@ -138,6 +118,7 @@ Two streaming AI routes (Anthropic Claude Sonnet 4.5 via Vercel AI SDK) power th
 ### The Sandbox
 
 The sandbox (`src/lib/sandbox.ts`) uses an in-memory virtual filesystem pre-populated with:
+
 - `api.d.ts` — the full `StrategyAPI` type definitions (so the AI knows exactly what methods are available)
 - `main.ts` — either the existing strategy code or a blank template
 - `tsconfig.json` — TypeScript configuration for syntax checking
@@ -206,29 +187,29 @@ The runtime injects a constrained `api` object into every strategy. Strategies c
 ```typescript
 // ── RobinPump Trading ──────────────────────
 api.robinpump.listCoins({ sort: "newest", limit: 20 }); // → Coin[]
-api.robinpump.getPrice(pairAddress);                      // → number (ETH)
-api.robinpump.getMarketCap(pairAddress);                  // → number (USD)
-api.robinpump.buy(pairAddress, ethAmount);                 // → { hash, status }
-api.robinpump.sell(pairAddress, tokenAmount);               // → { hash, status }
-api.robinpump.getBalance(tokenAddress);                    // → number (tokens)
-api.robinpump.getEthBalance();                             // → number (ETH)
-api.robinpump.getEthUsdPrice();                            // → number (USD)
+api.robinpump.getPrice(pairAddress); // → number (ETH)
+api.robinpump.getMarketCap(pairAddress); // → number (USD)
+api.robinpump.buy(pairAddress, ethAmount); // → { hash, status }
+api.robinpump.sell(pairAddress, tokenAmount); // → { hash, status }
+api.robinpump.getBalance(tokenAddress); // → number (tokens)
+api.robinpump.getEthBalance(); // → number (ETH)
+api.robinpump.getEthUsdPrice(); // → number (USD)
 
 // ── Scheduling ─────────────────────────────
-api.schedule("30s");                    // relative: 30s, 5m, 1h, 1d
-api.schedule("cron:*/5 * * * *");       // cron: every 5 minutes
-api.schedule("once");                   // one-shot (no reschedule)
-api.schedule({ in: "5m" });             // relative object form
-api.schedule({ in: 30000 });            // relative ms
+api.schedule("30s"); // relative: 30s, 5m, 1h, 1d
+api.schedule("cron:*/5 * * * *"); // cron: every 5 minutes
+api.schedule("once"); // one-shot (no reschedule)
+api.schedule({ in: "5m" }); // relative object form
+api.schedule({ in: 30000 }); // relative ms
 api.schedule({ at: "2026-02-12T12:00:00Z" }); // absolute ISO
-api.schedule({ at: 1739361600 });       // absolute unix seconds
-api.scheduleNext("5m");                 // back-compat alias
+api.schedule({ at: 1739361600 }); // absolute unix seconds
+api.scheduleNext("5m"); // back-compat alias
 
 // ── Utilities ──────────────────────────────
-api.log("message");       // write to strategy log
-api.now();                // → unix ms timestamp
-api.utcTime();            // → ISO string
-api.isDryRun();           // → boolean
+api.log("message"); // write to strategy log
+api.now(); // → unix ms timestamp
+api.utcTime(); // → ISO string
+api.isDryRun(); // → boolean
 ```
 
 ### Scheduling Model
@@ -265,18 +246,18 @@ The runtime parses these annotations at execution time, validates saved paramete
 
 Safety is enforced at every layer — from code validation to on-chain contract access control:
 
-| Layer                   | Protection                                                                                                             |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Code validation**     | Strategy code is scanned for unsafe patterns: `import`, `require()`, `process`, `eval`, `Function`, `fetch`, `Bun`, `globalThis`, `WebSocket`, `__proto__`, `constructor.constructor` |
-| **Sandboxed execution** | TypeScript is transpiled via Bun's built-in transpiler, then executed via `new Function("__api__", code)` with only the `StrategyAPI` object in scope — no access to the server's modules, filesystem, or network |
-| **Risk limits**         | Max ETH per trade (default: 0.002), max ETH per run (0.01), max ETH per day (0.03), max trades per run (50). All env-configurable. Enforced server-side in the runtime — strategies cannot bypass them |
-| **Slippage bounds**     | `minTokensOut` / `minEthOut` calculated from the pair's constant-product reserves and applied on every on-chain trade. Default: 1000 bps (10%). Configurable via `TRAD_DEFAULT_SLIPPAGE_BPS` |
-| **Dry-run default**     | Production defaults to simulated trading unless `TRAD_ALLOW_LIVE_TRADING=true` is explicitly set. Dry-run trades are logged with a simulated hash so strategies can still be tested end-to-end |
-| **Delegation**          | TradDelegate contract: operator can only trade allowlisted pairs, only the user can withdraw, emergency pause halts trades but never blocks withdrawals. Reentrancy guard on all state-changing functions |
-| **Balance checks**      | Before every buy, the runtime verifies the user has sufficient ETH (delegate deposit or wallet balance). Amounts are clamped to available balances to prevent 1-wei rounding overflows |
-| **Daily budget tracking** | ETH spend is tracked per-day and per-run. Trades that would exceed the budget are rejected before they hit the chain |
-| **Nonce management**    | Delegate-mode trades fetch a `pending` nonce before each transaction and retry up to 4 times on nonce conflicts (replacement underpriced, nonce too low) |
-| **Slippage retries**    | If a trade reverts with `SlippageExceeded`, the runtime halves `minTokensOut` / `minEthOut` and retries up to 5 times before aborting |
+| Layer                     | Protection                                                                                                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Code validation**       | Strategy code is scanned for unsafe patterns: `import`, `require()`, `process`, `eval`, `Function`, `fetch`, `Bun`, `globalThis`, `WebSocket`, `__proto__`, `constructor.constructor`                             |
+| **Sandboxed execution**   | TypeScript is transpiled via Bun's built-in transpiler, then executed via `new Function("__api__", code)` with only the `StrategyAPI` object in scope — no access to the server's modules, filesystem, or network |
+| **Risk limits**           | Max ETH per trade (default: 0.002), max ETH per run (0.01), max ETH per day (0.03), max trades per run (50). All env-configurable. Enforced server-side in the runtime — strategies cannot bypass them            |
+| **Slippage bounds**       | `minTokensOut` / `minEthOut` calculated from the pair's constant-product reserves and applied on every on-chain trade. Default: 1000 bps (10%). Configurable via `TRAD_DEFAULT_SLIPPAGE_BPS`                      |
+| **Dry-run default**       | Production defaults to simulated trading unless `TRAD_ALLOW_LIVE_TRADING=true` is explicitly set. Dry-run trades are logged with a simulated hash so strategies can still be tested end-to-end                    |
+| **Delegation**            | TradDelegate contract: operator can only trade allowlisted pairs, only the user can withdraw, emergency pause halts trades but never blocks withdrawals. Reentrancy guard on all state-changing functions         |
+| **Balance checks**        | Before every buy, the runtime verifies the user has sufficient ETH (delegate deposit or wallet balance). Amounts are clamped to available balances to prevent 1-wei rounding overflows                            |
+| **Daily budget tracking** | ETH spend is tracked per-day and per-run. Trades that would exceed the budget are rejected before they hit the chain                                                                                              |
+| **Nonce management**      | Delegate-mode trades fetch a `pending` nonce before each transaction and retry up to 4 times on nonce conflicts (replacement underpriced, nonce too low)                                                          |
+| **Slippage retries**      | If a trade reverts with `SlippageExceeded`, the runtime halves `minTokensOut` / `minEthOut` and retries up to 5 times before aborting                                                                             |
 
 ---
 
@@ -324,10 +305,10 @@ Safety is enforced at every layer — from code validation to on-chain contract 
 
 ### Execution Modes
 
-| Mode | How it works | When to use |
-| ---- | ------------ | ----------- |
+| Mode                       | How it works                                                                                                                                                                                  | When to use                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | **Delegate** (recommended) | Trades route through the TradDelegate contract. User deposits ETH into the contract; the operator wallet sends `executeBuy`/`executeSell` transactions. User retains full withdrawal control. | Production. Requires `TRAD_DELEGATE_ADDRESS` + `OPERATOR_PRIVATE_KEY` in env. |
-| **Direct** (legacy) | Trades execute directly from a private key stored in the database. The server has full control of the wallet. | Development / testing only. |
+| **Direct** (legacy)        | Trades execute directly from a private key stored in the database. The server has full control of the wallet.                                                                                 | Development / testing only.                                                   |
 
 ---
 
@@ -352,19 +333,19 @@ Safety is enforced at every layer — from code validation to on-chain contract 
 
 ## Tech Stack
 
-| Component           | Technology                                                                                   |
-| ------------------- | -------------------------------------------------------------------------------------------- |
-| Runtime             | [Bun](https://bun.sh) (v1.2+)                                                               |
-| Frontend            | [React 19](https://react.dev) + [Tailwind CSS 4](https://tailwindcss.com)                   |
-| UI Components       | [Radix UI](https://radix-ui.com) + [shadcn/ui](https://ui.shadcn.com)                       |
-| AI                  | [Vercel AI SDK](https://sdk.vercel.ai) + [Anthropic Claude Sonnet 4.5](https://anthropic.com) |
+| Component           | Technology                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Runtime             | [Bun](https://bun.sh) (v1.2+)                                                                                             |
+| Frontend            | [React 19](https://react.dev) + [Tailwind CSS 4](https://tailwindcss.com)                                                 |
+| UI Components       | [Radix UI](https://radix-ui.com) + [shadcn/ui](https://ui.shadcn.com)                                                     |
+| AI                  | [Vercel AI SDK](https://sdk.vercel.ai) + [Anthropic Claude Sonnet 4.5](https://anthropic.com)                             |
 | AI Sandbox          | [just-bash](https://github.com/nicholasgriffintn/just-bash) + [bash-tool](https://github.com/nicholasgriffintn/bash-tool) |
-| Database            | [Prisma](https://prisma.io) + SQLite (via [libSQL](https://github.com/tursodatabase/libsql)) |
-| Blockchain          | [viem](https://viem.sh) + [wagmi](https://wagmi.sh) (Base chain)                            |
-| Smart Contracts     | Solidity 0.8.20 + [Foundry](https://book.getfoundry.sh)                                     |
-| Charts              | [Recharts](https://recharts.org)                                                             |
-| Dashboard Rendering | [json-render](https://github.com/nicholasgriffintn/json-render)                             |
-| Markdown (AI chat)  | [Streamdown](https://github.com/nicholasgriffintn/streamdown)                               |
+| Database            | [Prisma](https://prisma.io) + SQLite (via [libSQL](https://github.com/tursodatabase/libsql))                              |
+| Blockchain          | [viem](https://viem.sh) + [wagmi](https://wagmi.sh) (Base chain)                                                          |
+| Smart Contracts     | Solidity 0.8.20 + [Foundry](https://book.getfoundry.sh)                                                                   |
+| Charts              | [Recharts](https://recharts.org)                                                                                          |
+| Dashboard Rendering | [json-render](https://github.com/nicholasgriffintn/json-render)                                                           |
+| Markdown (AI chat)  | [Streamdown](https://github.com/nicholasgriffintn/streamdown)                                                             |
 
 ---
 
@@ -479,10 +460,10 @@ bun run lint
 
 ### Required
 
-| Variable             | Description                                    |
-| -------------------- | ---------------------------------------------- |
-| `ANTHROPIC_API_KEY`  | Anthropic API key for Claude (strategy AI)     |
-| `TRAD_ADMIN_TOKEN`   | Protects admin routes (settings, deploy/stop)  |
+| Variable            | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude (strategy AI)    |
+| `TRAD_ADMIN_TOKEN`  | Protects admin routes (settings, deploy/stop) |
 
 ### Common
 
@@ -502,13 +483,13 @@ bun run lint
 
 ### Risk limits
 
-| Variable                    | Description                                | Default        |
-| --------------------------- | ------------------------------------------ | -------------- |
-| `TRAD_MAX_ETH_PER_TRADE`   | Max ETH per single trade                   | `0.002`        |
-| `TRAD_MAX_ETH_PER_RUN`     | Max ETH per strategy run                   | `0.01`         |
-| `TRAD_MAX_ETH_PER_DAY`     | Max ETH per day                            | `0.03`         |
-| `TRAD_MAX_TRADES_PER_RUN`  | Max trades per run                         | `50`           |
-| `TRAD_DEFAULT_SLIPPAGE_BPS`| Default slippage tolerance in basis points | `1000` (10%)   |
+| Variable                    | Description                                | Default      |
+| --------------------------- | ------------------------------------------ | ------------ |
+| `TRAD_MAX_ETH_PER_TRADE`    | Max ETH per single trade                   | `0.002`      |
+| `TRAD_MAX_ETH_PER_RUN`      | Max ETH per strategy run                   | `0.01`       |
+| `TRAD_MAX_ETH_PER_DAY`      | Max ETH per day                            | `0.03`       |
+| `TRAD_MAX_TRADES_PER_RUN`   | Max trades per run                         | `50`         |
+| `TRAD_DEFAULT_SLIPPAGE_BPS` | Default slippage tolerance in basis points | `1000` (10%) |
 
 ---
 
