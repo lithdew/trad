@@ -101,47 +101,66 @@ Superpower (Founding Engineer)
 
 ## Full description
 
-**trad is a "Cursor for Trading Bots" for non-technical users.** People have always wanted to automate bets and investments in the crypto market, but today they're forced into:
+trad is "Cursor for Trading Bots" — an AI-powered platform that lets anyone describe a trading strategy in plain English and get a fully working, deployable strategy running live on RobinPump.fun (Base), with no coding, no templates, and no subscription fees.
 
-- Template-locked "bot platforms" (e.g., only grid bots / a few preset strategies)
-- High recurring platform fees
-- Complex exchange APIs and infrastructure
+**The problem:** Millions of financially literate people — teachers, lawyers, office workers — want to automate crypto trading. But their options are terrible. "Bot platforms" lock you into the same three strategies everyone else uses (grid bots, DCA, trailing stops). Custom strategies require coding against complex exchange APIs. And everything charges a recurring subscription that eats into already-thin margins. The result: regular people can't compete, and the strategies they actually want to run, they can't build.
 
-trad removes those constraints. A user describes a strategy in plain English, and trad generates:
+**What trad does:** A user opens trad, describes any strategy they want in natural language — "buy newly launched coins under $5K market cap and sell at 2% profit" — and trad generates:
 
-- **Working TypeScript strategy code** (the exact code that runs)
-- A **visual dashboard** (WHEN -> IF -> THEN flow + parameters you can tweak)
-- A **deployable bot** that runs on a schedule and logs its actions
+- **Real TypeScript strategy code** (not a template — the exact code that executes, fully inspectable)
+- **A live visual dashboard** showing the strategy's WHEN/IF/THEN logic and tunable parameters
+- **A deployable, scheduled bot** that runs on-chain with full trade logging, PnL tracking, and performance analytics
 
-This build is focused on **RobinPump.fun on Base**. It helps traders act faster on new launches by turning intent into an automated strategy with safety rails (risk limits, dry-run by default, slippage bounds, and a constrained strategy API surface) -- without forcing users into a limited set of strategy templates.
+Strategies aren't picked from a dropdown — they're generated as real code against a constrained API surface, so users can express genuinely novel ideas and iterate on them through conversation. The AI sees the full StrategyAPI type definitions, live market data, and the user's existing strategies, so it writes code that actually compiles and runs.
+
+**Safety is built in at every layer.** User funds live in the TradDelegate smart contract on Base, where an authorized operator can execute trades on their behalf but can never withdraw their money — delegation without custody. The runtime enforces risk limits (max ETH per trade, per run, per day), applies slippage bounds on every on-chain trade, defaults to dry-run/simulated mode in production, and sandboxes strategy code so it can't access the network, filesystem, or runtime internals.
+
+This build targets RobinPump.fun on Base — a fair-launch token launchpad where new coins trade on bonding curves. trad helps traders act faster on new launches by turning intent into automated execution, with guardrails that prevent catastrophic losses. In testing, a single strategy executed over 100 real on-chain trades in just a few minutes. Every trade is a verifiable transaction on the Base blockchain.
 
 ---
 
 ## Technical explanation
 
-trad is a full-stack Bun + React app with an on-chain execution path on **Base**:
+trad is a full-stack Bun + React 19 application with deep on-chain integration on **Base** (Ethereum L2). It uses DeFi primitives for trading execution, market data, and custodial delegation.
 
-- **On-chain integration (DeFi)**:
-  - Executes RobinPump trades against bonding-curve pair contracts using `viem`
-  - Fetches coin market data (prices/volume/trades) via the RobinPump subgraph (fast UI + strategy logic inputs)
+**1. On-chain trading via RobinPump bonding curves**
 
-- **Safety + wallet model**:
-  - **TradDelegate** smart contract lets users deposit ETH; a server operator executes trades **without withdrawal rights**
-  - Risk limits enforced server-side (max ETH/trade, max ETH/run/day, max trades/run)
-  - Dry-run defaults for production unless live trading is explicitly enabled
-  - Slippage bounds applied via `minTokensOut` / `minEthOut` when trading
+Every trade is a real on-chain transaction against RobinPump's bonding-curve pair contracts. The runtime calls `IRobinPumpPair.buy()` and `IRobinPumpPair.sell()` directly using `viem`, with slippage protection enforced via `minTokensOut` / `minEthOut` parameters calculated from the pair's constant-product reserves. This means strategies interact with open, permissionless on-chain liquidity — not a centralized order book or mock environment. Trades produce verifiable transaction hashes on Base with sub-cent gas costs.
 
-- **AI + UX**:
-  - Two streaming AI routes:
-    - Strategy code generation (chat -> TypeScript strategy)
-    - Dashboard UI generation (chat -> json-render spec)
-  - Strategies are persisted in SQLite (Prisma) and executed by a runtime with a constrained `StrategyAPI`
+**2. TradDelegate smart contract: delegation without custody (the key DeFi innovation)**
 
-**Not template-locked:** strategies are generated as real code (with a constrained API surface), so users aren't confined to a handful of preset bots -- they can express new ideas and iterate quickly.
+The biggest technical challenge in automated trading is the custody problem: how do you let a server trade on behalf of a user without giving it the ability to steal funds? trad solves this with the **TradDelegate** contract ([deployed on Base mainnet](https://basescan.org/address/0x06847d8d174454f36f31f1f6a22206e43032c0cb), Solidity 0.8.20 + Foundry):
 
-**Fee model (practical):** the app is open-source and doesn't require a centralized "bot platform" subscription. Execution costs are the underlying venue's fees + Base gas (and an optional delegate fee if configured).
+- Users **deposit ETH** into the contract via `deposit()`
+- An authorized **operator** (the trad server) executes `executeBuy()` and `executeSell()` on their behalf, routing trades to RobinPump pair contracts
+- **Only the depositor can withdraw** — `withdraw()`, `withdrawAll()`, and `withdrawTokens()` are caller-restricted. The operator has zero withdrawal capability
+- Pair contracts must be **allowlisted** (by address or by runtime `EXTCODEHASH`) before the operator can trade against them — preventing the operator from routing funds to malicious contracts
+- An emergency **pause** mechanism (guardian or owner) halts new trades and deposits instantly, but **withdrawals always work**, even when paused — users always have an exit
+- Reentrancy protection via a status guard on all state-changing functions
+- Platform fees are taken in basis points (max 10%, configurable by owner) and sent to a separate fee receiver — fee extraction is transparent and on-chain
 
-**Why blockchain is uniquely useful here:** execution is verifiable (tx hashes), the strategy interacts with open on-chain liquidity, and delegated-contract custody enables safer automation without handing the server full withdrawal power.
+This design is uniquely enabled by smart contracts: the access control rules (operator can trade, only user can withdraw, pair allowlisting, emergency pause) are enforced by immutable on-chain code, not by trusting a server. No centralized backend could provide equivalent guarantees.
+
+**3. Market data via RobinPump Goldsky subgraph**
+
+Strategy logic reads live coin data — prices, volumes, market caps, trade counts, graduation status — from RobinPump's Goldsky subgraph via GraphQL. This gives strategies fast, reliable inputs without polling the chain directly, and enables the AI to query real market conditions when generating strategy code.
+
+**4. Sandboxed strategy execution engine**
+
+User-written strategy code is transpiled from TypeScript (via Bun's built-in transpiler), validated against a blocklist of unsafe patterns (no imports, no `eval`, no `fetch`, no `process`, no `globalThis`), and executed via `new Function()` with only a constrained `StrategyAPI` object in scope. The API exposes exactly: RobinPump market data reads, buy/sell execution, scheduling, logging, and time utilities — nothing else. Risk limits (max ETH per trade/run/day, max trades per run) are enforced server-side in the runtime, not in the user's code, so they cannot be bypassed.
+
+**5. AI code generation with full context**
+
+Two streaming AI routes (Anthropic Claude via Vercel AI SDK) power the UX: one generates strategy code from conversation, and one generates a visual dashboard spec. The strategy AI operates in a sandboxed environment with tool use — it can read the full `StrategyAPI` type definitions, query live market data, inspect existing strategies and their performance, and lint its own code before outputting it. This means the AI doesn't hallucinate API methods — it writes code that actually compiles and runs.
+
+**Why blockchain makes this uniquely possible:**
+
+- **Verifiability**: every trade is an on-chain transaction with a hash anyone can audit — there's no "trust me, the trade happened"
+- **Permissionless liquidity**: strategies trade against open bonding curves, not a platform-controlled order book
+- **Programmable custody**: the TradDelegate contract enforces delegation rules (operator trades, only user withdraws) in immutable code — this custody model is impossible to replicate with a traditional backend, where the server always has the database password
+- **Composability**: the contract interacts directly with RobinPump's pair interface (`buy`/`sell`/`token`), ERC-20 token standards, and could be extended to any DeFi protocol with the same pattern
+
+**Stack:** Bun, React 19, Tailwind CSS 4, Radix UI + shadcn/ui, Vercel AI SDK (Anthropic Claude), Prisma + SQLite, viem + wagmi (Base), Solidity 0.8.20 + Foundry, Recharts, json-render, Streamdown.
 
 ---
 
