@@ -16,6 +16,26 @@ Built solo in 24 hours at the [EasyA x Consensus Hong Kong Hackathon](https://co
 
 ---
 
+## Screenshots
+
+| New Strategy — AI Chat | AI Chat + Code View |
+| --- | --- |
+| ![New Strategy](assets/new-strategy.png) | ![AI Chat + Code](assets/ai-chat-code.png) |
+
+| Visual Dashboard | WHEN/IF/THEN Flow + Parameters |
+| --- | --- |
+| ![Visual Dashboard](assets/visual-dashboard.png) | ![Flow + Parameters](assets/visual-flow-params.png) |
+
+| Live Trading + Performance | Performance — PnL Waterfall |
+| --- | --- |
+| ![Live Trading](assets/live-trading.png) | ![Performance](assets/performance.png) |
+
+| Strategy Marketplace | TradDelegate On-Chain Smoke Test |
+| --- | --- |
+| ![Marketplace](assets/marketplace.png) | ![Delegate Smoke Test](assets/delegate-smoke-test.png) |
+
+---
+
 ## The Problem
 
 Millions of financially literate people — teachers, lawyers, office workers — want to automate crypto trading. Their options today:
