@@ -1,7 +1,7 @@
 import { streamText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { catalog } from "../lib/catalog";
-import { isAdminRequest, rateLimit } from "../lib/server/security";
+import { isAdminRequest, rateLimit, requireAdmin } from "../lib/server/security";
 
 /* ── UI-gen system prompt (Haiku 4.5) ────────────────────── */
 
@@ -88,15 +88,24 @@ DATA BINDING — interactive MetricCards:
 export const generateRoutes = {
   "/api/generate": {
     async POST(req: Request) {
+      const authErr = requireAdmin(req);
+      if (authErr !== null) return authErr;
+
       try {
         if (!isAdminRequest(req)) {
-          const rl = rateLimit(req, { key: "generate", limit: 20, windowMs: 60_000 });
+          const rl = rateLimit(req, {
+            key: "generate",
+            limit: 20,
+            windowMs: 60_000,
+          });
           if (!rl.allowed) {
             return Response.json(
               { error: "Ratelimited" },
               {
                 status: 429,
-                headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) },
+                headers: {
+                  "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)),
+                },
               },
             );
           }
