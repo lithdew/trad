@@ -37,4 +37,3 @@ This repo integrates RobinPump in two ways:
   - Prefer **TradDelegate** (users deposit ETH; server operator executes trades within contract constraints)
   - Avoid storing raw user private keys in the DB for public deployments
 - **RPC reliability**: configure `BASE_RPC_URL` to a production RPC with good rate limits.
-

@@ -1,16 +1,30 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
-  Tooltip as RTooltip, CartesianGrid, ReferenceDot,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  CartesianGrid,
+  ReferenceDot,
 } from "recharts";
 import { useAccount, useBalance } from "wagmi";
 import { formatUnits } from "viem";
-import { Plus, Trash2, TrendingUp, Wallet } from "lucide-react";
+import { ExternalLink, Plus, Trash2, TrendingUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "../../App";
 import {
-  useCoins, useCoinsEnriched, useCoinTrades, useStrategies, useDeleteStrategyMutation, useTradeMutation,
-  type CoinData, type CoinWithMetadata, type TradeData, type Strategy,
+  useCoins,
+  useCoinsEnriched,
+  useCoinTrades,
+  useStrategies,
+  useDeleteStrategyMutation,
+  useTradeMutation,
+  type CoinData,
+  type CoinWithMetadata,
+  type TradeData,
+  type Strategy,
 } from "../../lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,8 +32,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 /* ══════════════════════════════════════════════════════════════
@@ -128,7 +148,8 @@ export function Dashboard() {
   }
 
   /* Selected coin enrichment */
-  const selectedEnriched = selectedCoin !== null ? enrichmentMap.get(selectedCoin.pairAddress) : undefined;
+  const selectedEnriched =
+    selectedCoin !== null ? enrichmentMap.get(selectedCoin.pairAddress) : undefined;
 
   /* Build strategy card elements */
   const strategyCards: React.ReactNode[] = [];
@@ -139,9 +160,12 @@ export function Dashboard() {
         <StrategyCard
           s={s}
           onClick={() => navigate(`/strategy/${s.id}`)}
-          onDelete={(e) => { e.stopPropagation(); setDeleteTarget(s); }}
+          onDelete={(e) => {
+            e.stopPropagation();
+            setDeleteTarget(s);
+          }}
         />
-      </div>
+      </div>,
     );
   }
 
@@ -160,7 +184,7 @@ export function Dashboard() {
             <Skeleton className="h-3 w-20 ml-auto" />
             <Skeleton className="h-2.5 w-14 ml-auto" />
           </div>
-        </div>
+        </div>,
       );
     }
   } else {
@@ -168,14 +192,18 @@ export function Dashboard() {
       const coin = sortedCoins[idx]!;
       const enriched = enrichmentMap.get(coin.pairAddress);
       coinItems.push(
-        <div key={coin.pairAddress} className="animate-fadeSlideUp" style={{ animationDelay: `${idx * 30}ms` }}>
+        <div
+          key={coin.pairAddress}
+          className="animate-fadeSlideUp"
+          style={{ animationDelay: `${idx * 30}ms` }}
+        >
           <CoinCard
             coin={coin}
             imageUrl={enriched?.imageUrl}
             selected={selectedCoin?.pairAddress === coin.pairAddress}
             onClick={() => setSelectedCoin(coin)}
           />
-        </div>
+        </div>,
       );
     }
   }
@@ -190,10 +218,14 @@ export function Dashboard() {
         variant={sort === mode ? "secondary" : "ghost"}
         size="xs"
         onClick={() => setSort(mode)}
-        className={sort === mode ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "text-muted-foreground"}
+        className={
+          sort === mode
+            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            : "text-muted-foreground"
+        }
       >
         {mode.charAt(0).toUpperCase() + mode.slice(1)}
-      </Button>
+      </Button>,
     );
   }
 
@@ -206,17 +238,27 @@ export function Dashboard() {
       </div>
 
       {/* ── Delete confirmation dialog ───────────────────── */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Strategy?</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="text-foreground font-medium">"{deleteTarget?.name}"</span> will be permanently removed.
+              <span className="text-foreground font-medium">"{deleteTarget?.name}"</span> will be
+              permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+            >
               {deleteMutation.isPending ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -238,7 +280,10 @@ export function Dashboard() {
             AI-powered trading strategies for RobinPump.fun
           </p>
         </div>
-        <Button onClick={() => navigate("/strategy")} className="gap-2 shadow-[0_0_24px_rgba(229,160,13,0.12)]">
+        <Button
+          onClick={() => navigate("/strategy")}
+          className="gap-2 shadow-[0_0_24px_rgba(229,160,13,0.12)]"
+        >
           <Plus className="size-4" />
           New Strategy
         </Button>
@@ -247,45 +292,80 @@ export function Dashboard() {
       {/* ── Stats Row ────────────────────────────────────── */}
       <div className="relative shrink-0 px-4 md:px-8 py-3">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Card className="relative py-3.5 overflow-hidden animate-fadeSlideUp" style={{ animationDelay: "0ms" }}>
+          <Card
+            className="relative py-3.5 overflow-hidden animate-fadeSlideUp"
+            style={{ animationDelay: "0ms" }}
+          >
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-400" />
             <div className="absolute inset-0 bg-linear-to-r from-emerald-400/3 to-transparent pointer-events-none" />
             <CardContent className="px-4 pl-5 relative">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">Active Bots</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">
+                Active Bots
+              </span>
               <span className="flex items-center gap-1.5">
-                {activeCount > 0 && <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-                <span className="font-display text-[1.5rem] leading-none text-emerald-400">{activeCount}</span>
+                {activeCount > 0 && (
+                  <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                )}
+                <span className="font-display text-[1.5rem] leading-none text-emerald-400">
+                  {activeCount}
+                </span>
               </span>
             </CardContent>
           </Card>
-          <Card className="relative py-3.5 overflow-hidden animate-fadeSlideUp" style={{ animationDelay: "40ms" }}>
+          <Card
+            className="relative py-3.5 overflow-hidden animate-fadeSlideUp"
+            style={{ animationDelay: "40ms" }}
+          >
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary" />
             <div className="absolute inset-0 bg-linear-to-r from-primary/3 to-transparent pointer-events-none" />
             <CardContent className="px-4 pl-5 relative">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">Strategies</span>
-              <span className="font-display text-[1.5rem] leading-none text-foreground">{strategies.length}</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">
+                Strategies
+              </span>
+              <span className="font-display text-[1.5rem] leading-none text-foreground">
+                {strategies.length}
+              </span>
             </CardContent>
           </Card>
-          <Card className="relative py-3.5 overflow-hidden animate-fadeSlideUp" style={{ animationDelay: "80ms" }}>
+          <Card
+            className="relative py-3.5 overflow-hidden animate-fadeSlideUp"
+            style={{ animationDelay: "80ms" }}
+          >
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-border-light" />
             <CardContent className="px-4 pl-5 relative">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">Draft</span>
-              <span className="font-display text-[1.5rem] leading-none text-text-secondary">{draftCount}</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">
+                Draft
+              </span>
+              <span className="font-display text-[1.5rem] leading-none text-text-secondary">
+                {draftCount}
+              </span>
             </CardContent>
           </Card>
-          <Card className="relative py-3.5 overflow-hidden animate-fadeSlideUp" style={{ animationDelay: "120ms" }}>
+          <Card
+            className="relative py-3.5 overflow-hidden animate-fadeSlideUp"
+            style={{ animationDelay: "120ms" }}
+          >
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-destructive" />
             <div className="absolute inset-0 bg-linear-to-r from-destructive/2 to-transparent pointer-events-none" />
             <CardContent className="px-4 pl-5 relative">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">Errored</span>
-              <span className="font-display text-[1.5rem] leading-none text-destructive">{errorCount}</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">
+                Errored
+              </span>
+              <span className="font-display text-[1.5rem] leading-none text-destructive">
+                {errorCount}
+              </span>
             </CardContent>
           </Card>
-          <Card className="relative py-3.5 overflow-hidden animate-fadeSlideUp" style={{ animationDelay: "160ms" }}>
+          <Card
+            className="relative py-3.5 overflow-hidden animate-fadeSlideUp"
+            style={{ animationDelay: "160ms" }}
+          >
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-blue-400" />
             <div className="absolute inset-0 bg-linear-to-r from-blue-400/3 to-transparent pointer-events-none" />
             <CardContent className="px-4 pl-5 relative">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">Market Vol</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">
+                Market Vol
+              </span>
               <span className="flex items-center gap-1.5">
                 <TrendingUp className="size-3.5 text-blue-400" />
                 <span className="font-display text-[1.3rem] leading-none text-blue-400">
@@ -295,17 +375,24 @@ export function Dashboard() {
               </span>
             </CardContent>
           </Card>
-          <Card className="relative py-3.5 overflow-hidden animate-fadeSlideUp" style={{ animationDelay: "200ms" }}>
+          <Card
+            className="relative py-3.5 overflow-hidden animate-fadeSlideUp"
+            style={{ animationDelay: "200ms" }}
+          >
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-violet-400" />
             <div className="absolute inset-0 bg-linear-to-r from-violet-400/3 to-transparent pointer-events-none" />
             <CardContent className="px-4 pl-5 relative">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">Portfolio</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em] block mb-1">
+                Portfolio
+              </span>
               <span className="flex items-center gap-1.5">
                 <Wallet className="size-3.5 text-violet-400" />
                 {isConnected === true && walletBalance != null ? (
                   <>
                     <span className="font-display text-[1.3rem] leading-none text-violet-400">
-                      {parseFloat(formatUnits(walletBalance.value, walletBalance.decimals)).toFixed(4)}
+                      {parseFloat(formatUnits(walletBalance.value, walletBalance.decimals)).toFixed(
+                        4,
+                      )}
                     </span>
                     <span className="text-[9px] text-muted-foreground/60 font-bold">ETH</span>
                   </>
@@ -339,8 +426,10 @@ export function Dashboard() {
                          flex items-center justify-center gap-3 min-h-[68px]
                          transition-all hover:bg-primary/2 cursor-pointer"
             >
-              <div className="size-9 rounded-full border-2 border-dashed border-border group-hover:border-primary/30
-                              flex items-center justify-center transition-colors">
+              <div
+                className="size-9 rounded-full border-2 border-dashed border-border group-hover:border-primary/30
+                              flex items-center justify-center transition-colors"
+              >
                 <Plus className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
               <span className="text-muted-foreground text-sm font-medium group-hover:text-foreground/70 transition-colors">
@@ -351,8 +440,10 @@ export function Dashboard() {
             {/* Empty state */}
             {strategies.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="size-16 rounded-2xl bg-primary/5 border border-primary/10
-                                flex items-center justify-center mb-5">
+                <div
+                  className="size-16 rounded-2xl bg-primary/5 border border-primary/10
+                                flex items-center justify-center mb-5"
+                >
                   <Plus className="size-7 text-primary/40" />
                 </div>
                 <h3 className="font-display text-xl text-foreground mb-2">No strategies yet</h3>
@@ -374,13 +465,31 @@ export function Dashboard() {
           {selectedCoin !== null && (
             <div className="shrink-0 mb-3">
               <div className="flex items-center gap-2.5 mb-2.5">
-                <CoinAvatar symbol={selectedCoin.symbol} imageUrl={selectedEnriched?.imageUrl} size="lg" />
+                <CoinAvatar
+                  symbol={selectedCoin.symbol}
+                  imageUrl={selectedEnriched?.imageUrl}
+                  size="lg"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-display text-[15px] text-foreground">{selectedCoin.symbol}</span>
-                    <span className="text-muted-foreground text-xs truncate">{selectedCoin.name}</span>
+                    <a
+                      href={`https://robinpump.fun/project/${selectedCoin.tokenAddress}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="font-display text-[15px] text-foreground inline-flex items-center gap-1 hover:underline underline-offset-4"
+                      title="Open on RobinPump.fun"
+                    >
+                      {selectedCoin.symbol}
+                      <ExternalLink className="size-3 opacity-60" />
+                    </a>
+                    <span className="text-muted-foreground text-xs truncate">
+                      {selectedCoin.name}
+                    </span>
                     {selectedCoin.graduated && (
-                      <Badge variant="outline" className="text-[8px] text-amber-400 border-amber-500/20 bg-amber-500/10 px-1.5 py-0">
+                      <Badge
+                        variant="outline"
+                        className="text-[8px] text-amber-400 border-amber-500/20 bg-amber-500/10 px-1.5 py-0"
+                      >
                         Graduated
                       </Badge>
                     )}
@@ -394,11 +503,12 @@ export function Dashboard() {
                     </span>
                   </div>
                   {/* Coin description from metadata */}
-                  {selectedEnriched?.metadata?.description !== undefined && selectedEnriched.metadata.description !== "" && (
-                    <p className="text-muted-foreground/70 text-[10px] mt-1 line-clamp-2 leading-relaxed max-w-[280px]">
-                      {selectedEnriched.metadata.description}
-                    </p>
-                  )}
+                  {selectedEnriched?.metadata?.description !== undefined &&
+                    selectedEnriched.metadata.description !== "" && (
+                      <p className="text-muted-foreground/70 text-[10px] mt-1 line-clamp-2 leading-relaxed max-w-[280px]">
+                        {selectedEnriched.metadata.description}
+                      </p>
+                    )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <MiniStat label="Volume" value={`${selectedCoin.totalVolumeEth.toFixed(3)}`} />
@@ -428,7 +538,9 @@ export function Dashboard() {
                       step="0.001"
                       min="0.0001"
                     />
-                    <span className="text-muted-foreground/40 text-[9px] font-bold pr-2 shrink-0 select-none">ETH</span>
+                    <span className="text-muted-foreground/40 text-[9px] font-bold pr-2 shrink-0 select-none">
+                      ETH
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 ml-auto">
                     <button
@@ -446,7 +558,9 @@ export function Dashboard() {
                           <span className="size-1 rounded-full bg-emerald-400 animate-pulse" />
                           Buying…
                         </span>
-                      ) : "Buy"}
+                      ) : (
+                        "Buy"
+                      )}
                     </button>
                     <button
                       onClick={() => handleTrade("sell")}
@@ -463,7 +577,9 @@ export function Dashboard() {
                           <span className="size-1 rounded-full bg-red-400 animate-pulse" />
                           Selling…
                         </span>
-                      ) : "Sell"}
+                      ) : (
+                        "Sell"
+                      )}
                     </button>
                   </div>
                 </div>
@@ -475,8 +591,12 @@ export function Dashboard() {
 
           {/* Sort controls + feed header */}
           <div className="flex items-center gap-2 py-3 shrink-0">
-            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Market Feed</span>
-            <span className="font-mono text-[10px] text-muted-foreground/60 ml-0.5">{coins.length}</span>
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+              Market Feed
+            </span>
+            <span className="font-mono text-[10px] text-muted-foreground/60 ml-0.5">
+              {coins.length}
+            </span>
             <div className="flex-1" />
             {sortBtns}
           </div>
@@ -486,7 +606,9 @@ export function Dashboard() {
             {coinItems}
             {!coinsLoading && coins.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-muted-foreground text-sm">No coins found. The subgraph may be loading.</p>
+                <p className="text-muted-foreground text-sm">
+                  No coins found. The subgraph may be loading.
+                </p>
               </div>
             )}
           </div>
@@ -503,7 +625,9 @@ export function Dashboard() {
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-right">
-      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">{label}</span>
+      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">
+        {label}
+      </span>
       <span className="font-mono text-[12px] text-text-secondary">{value}</span>
     </div>
   );
@@ -511,7 +635,12 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 
 /* ── Coin card (compact sidebar variant) ────────────────── */
 
-function CoinCard({ coin, imageUrl, selected, onClick }: {
+function CoinCard({
+  coin,
+  imageUrl,
+  selected,
+  onClick,
+}: {
   coin: CoinData;
   imageUrl?: string;
   selected: boolean;
@@ -521,19 +650,27 @@ function CoinCard({ coin, imageUrl, selected, onClick }: {
     <div
       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer
                   transition-all duration-200 ${
-        selected
-          ? "bg-emerald-500/6 ring-1 ring-inset ring-emerald-500/25"
-          : "hover:bg-secondary/60 hover:scale-[1.015] hover:border-border-light"
-      }`}
+                    selected
+                      ? "bg-emerald-500/6 ring-1 ring-inset ring-emerald-500/25"
+                      : "hover:bg-secondary/60 hover:scale-[1.015] hover:border-border-light"
+                  }`}
       onClick={onClick}
     >
       <CoinAvatar symbol={coin.symbol} imageUrl={imageUrl} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="font-semibold text-[12px] text-foreground truncate">{coin.symbol}</span>
-          {coin.graduated && (
-            <span className="text-amber-400 text-[8px]">★</span>
-          )}
+          <a
+            href={`https://robinpump.fun/project/${coin.tokenAddress}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            onClick={(e) => e.stopPropagation()}
+            className="font-semibold text-[12px] text-foreground truncate inline-flex items-center gap-1 hover:underline underline-offset-4"
+            title="Open on RobinPump.fun"
+          >
+            {coin.symbol}
+            <ExternalLink className="size-3 opacity-60" />
+          </a>
+          {coin.graduated && <span className="text-amber-400 text-[8px]">★</span>}
         </div>
         <p className="text-muted-foreground text-[10px] truncate">{coin.name}</p>
       </div>
@@ -541,7 +678,9 @@ function CoinCard({ coin, imageUrl, selected, onClick }: {
         <span className="font-mono text-[11px] text-foreground font-semibold block leading-tight">
           {fmtEth(coin.lastPriceEth)}
         </span>
-        <span className="font-mono text-[9px] text-muted-foreground leading-tight">{fmtUsd(coin.lastPriceUsd)}</span>
+        <span className="font-mono text-[9px] text-muted-foreground leading-tight">
+          {fmtUsd(coin.lastPriceUsd)}
+        </span>
       </div>
     </div>
   );
@@ -550,12 +689,23 @@ function CoinCard({ coin, imageUrl, selected, onClick }: {
 /* ── Coin avatar ─────────────────────────────────────────── */
 
 const AVATAR_COLORS = [
-  "bg-emerald-500/20 text-emerald-400", "bg-blue-500/20 text-blue-400",
-  "bg-violet-500/20 text-violet-400", "bg-amber-500/20 text-amber-400",
-  "bg-rose-500/20 text-rose-400", "bg-cyan-500/20 text-cyan-400",
+  "bg-emerald-500/20 text-emerald-400",
+  "bg-blue-500/20 text-blue-400",
+  "bg-violet-500/20 text-violet-400",
+  "bg-amber-500/20 text-amber-400",
+  "bg-rose-500/20 text-rose-400",
+  "bg-cyan-500/20 text-cyan-400",
 ];
 
-function CoinAvatar({ symbol, imageUrl, size = "sm" }: { symbol: string; imageUrl?: string; size?: "sm" | "lg" }) {
+function CoinAvatar({
+  symbol,
+  imageUrl,
+  size = "sm",
+}: {
+  symbol: string;
+  imageUrl?: string;
+  size?: "sm" | "lg";
+}) {
   const [imgError, setImgError] = useState(false);
   const dim = size === "lg" ? "size-10" : "size-8";
   const radius = size === "lg" ? "rounded-xl" : "rounded-lg";
@@ -579,7 +729,9 @@ function CoinAvatar({ symbol, imageUrl, size = "sm" }: { symbol: string; imageUr
     hash = ((hash << 5) - hash + symbol.charCodeAt(i)) | 0;
   }
   return (
-    <div className={`${dim} ${radius} flex items-center justify-center shrink-0 ${AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]}`}>
+    <div
+      className={`${dim} ${radius} flex items-center justify-center shrink-0 ${AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]}`}
+    >
       <span className={`${textSize} font-bold`}>{symbol.slice(0, 2).toUpperCase()}</span>
     </div>
   );
@@ -590,7 +742,10 @@ function CoinAvatar({ symbol, imageUrl, size = "sm" }: { symbol: string; imageUr
 function TradeChart({ trades, height = 160 }: { trades: TradeData[]; height?: number }) {
   if (trades.length < 2) {
     return (
-      <div className="w-full flex items-center justify-center text-muted-foreground text-sm bg-secondary/30 rounded-xl" style={{ height }}>
+      <div
+        className="w-full flex items-center justify-center text-muted-foreground text-sm bg-secondary/30 rounded-xl"
+        style={{ height }}
+      >
         {trades.length === 0 ? "No trades yet" : "Not enough data for chart"}
       </div>
     );
@@ -605,14 +760,24 @@ function TradeChart({ trades, height = 160 }: { trades: TradeData[]; height?: nu
     if (i % 4 === 0 || i === trades.length - 1) {
       const t = trades[i]!;
       refDots.push(
-        <ReferenceDot key={i} x={t.timestamp} y={t.priceEth} r={2}
-          fill={t.side === "buy" ? "#22c55e" : "#ef4444"} fillOpacity={0.6} stroke="none" />,
+        <ReferenceDot
+          key={i}
+          x={t.timestamp}
+          y={t.priceEth}
+          r={2}
+          fill={t.side === "buy" ? "#22c55e" : "#ef4444"}
+          fillOpacity={0.6}
+          stroke="none"
+        />,
       );
     }
   }
 
   return (
-    <div className="w-full rounded-xl bg-secondary/30 transition-[height] duration-300" style={{ height }}>
+    <div
+      className="w-full rounded-xl bg-secondary/30 transition-[height] duration-300"
+      style={{ height }}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={trades} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
           <defs>
@@ -625,25 +790,62 @@ function TradeChart({ trades, height = 160 }: { trades: TradeData[]; height?: nu
               <stop offset="85%" stopColor="#ef4444" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="4 4" stroke="var(--border)" strokeOpacity={0.4} vertical={false} />
-          <XAxis dataKey="timestamp" type="number" domain={["dataMin", "dataMax"]}
-            tickFormatter={(ts: number) => new Date(ts * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+          <CartesianGrid
+            strokeDasharray="4 4"
+            stroke="var(--border)"
+            strokeOpacity={0.4}
+            vertical={false}
+          />
+          <XAxis
+            dataKey="timestamp"
+            type="number"
+            domain={["dataMin", "dataMax"]}
+            tickFormatter={(ts: number) =>
+              new Date(ts * 1000).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            }
             tick={{ fill: "var(--muted-foreground)", fontSize: 9, fontFamily: "var(--font-mono)" }}
-            axisLine={false} tickLine={false} minTickGap={60} />
-          <YAxis dataKey="priceEth" domain={["auto", "auto"]} tickFormatter={fmtEth}
+            axisLine={false}
+            tickLine={false}
+            minTickGap={60}
+          />
+          <YAxis
+            dataKey="priceEth"
+            domain={["auto", "auto"]}
+            tickFormatter={fmtEth}
             tick={{ fill: "var(--muted-foreground)", fontSize: 9, fontFamily: "var(--font-mono)" }}
-            axisLine={false} tickLine={false} width={60} orientation="right" />
-          <RTooltip content={<TradeTooltip />}
+            axisLine={false}
+            tickLine={false}
+            width={60}
+            orientation="right"
+          />
+          <RTooltip
+            content={<TradeTooltip />}
             cursor={{ stroke: "var(--gold-dim)", strokeWidth: 1, strokeDasharray: "4 4" }}
-            isAnimationActive={false} />
-          <Area type="monotone" dataKey="priceEth" stroke={color} strokeWidth={2}
-            fill={`url(#${gradId})`} dot={false}
+            isAnimationActive={false}
+          />
+          <Area
+            type="monotone"
+            dataKey="priceEth"
+            stroke={color}
+            strokeWidth={2}
+            fill={`url(#${gradId})`}
+            dot={false}
             activeDot={(p: { cx?: number; cy?: number; payload?: TradeData }) => {
               if (p.cx === undefined || p.cy === undefined || p.payload === undefined) return <g />;
               const f = p.payload.side === "buy" ? "#22c55e" : "#ef4444";
-              return <g><circle cx={p.cx} cy={p.cy} r="5" fill={f} opacity="0.12" /><circle cx={p.cx} cy={p.cy} r="2.5" fill={f} opacity="0.8" /></g>;
+              return (
+                <g>
+                  <circle cx={p.cx} cy={p.cy} r="5" fill={f} opacity="0.12" />
+                  <circle cx={p.cx} cy={p.cy} r="2.5" fill={f} opacity="0.8" />
+                </g>
+              );
             }}
-            animationDuration={600} animationEasing="ease-out" />
+            animationDuration={600}
+            animationEasing="ease-out"
+          />
           {refDots}
         </AreaChart>
       </ResponsiveContainer>
@@ -651,20 +853,37 @@ function TradeChart({ trades, height = 160 }: { trades: TradeData[]; height?: nu
   );
 }
 
-function TradeTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: TradeData }> }) {
+function TradeTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: TradeData }>;
+}) {
   if (active !== true || payload === undefined || payload.length === 0) return null;
   const d = payload[0]!.payload;
   return (
     <div className="bg-popover/95 backdrop-blur-md border border-border-light rounded-xl px-3.5 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
       <div className="flex items-center gap-2 mb-1.5">
-        <span className={`size-1.5 rounded-full ${d.side === "buy" ? "bg-emerald-400" : "bg-red-400"}`} />
-        <span className={`text-[10px] font-bold uppercase tracking-wider ${d.side === "buy" ? "text-emerald-400" : "text-red-400"}`}>{d.side}</span>
+        <span
+          className={`size-1.5 rounded-full ${d.side === "buy" ? "bg-emerald-400" : "bg-red-400"}`}
+        />
+        <span
+          className={`text-[10px] font-bold uppercase tracking-wider ${d.side === "buy" ? "text-emerald-400" : "text-red-400"}`}
+        >
+          {d.side}
+        </span>
         <span className="text-[10px] text-muted-foreground ml-auto">
-          {new Date(d.timestamp * 1000).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+          {new Date(d.timestamp * 1000).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })}
         </span>
       </div>
       <div className="font-mono text-sm font-semibold text-foreground">
-        {fmtEth(d.priceEth)} <span className="text-muted-foreground text-[10px] font-normal">ETH</span>
+        {fmtEth(d.priceEth)}{" "}
+        <span className="text-muted-foreground text-[10px] font-normal">ETH</span>
       </div>
     </div>
   );
@@ -672,7 +891,11 @@ function TradeTooltip({ active, payload }: { active?: boolean; payload?: Array<{
 
 /* ── Strategy card ───────────────────────────────────────── */
 
-function StrategyCard({ s, onClick, onDelete }: {
+function StrategyCard({
+  s,
+  onClick,
+  onDelete,
+}: {
   s: Strategy;
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
@@ -689,7 +912,9 @@ function StrategyCard({ s, onClick, onDelete }: {
       onClick={onClick}
     >
       {/* Status accent bar */}
-      <div className={`w-1 group-hover:w-1.5 shrink-0 transition-all ${STATUS_BAR[s.status] ?? "bg-border-light"}`} />
+      <div
+        className={`w-1 group-hover:w-1.5 shrink-0 transition-all ${STATUS_BAR[s.status] ?? "bg-border-light"}`}
+      />
 
       <div className="flex-1 px-5 py-4 min-w-0">
         <div className="flex items-start justify-between gap-3">
@@ -703,7 +928,9 @@ function StrategyCard({ s, onClick, onDelete }: {
               </p>
             )}
           </div>
-          <Badge className={`shrink-0 capitalize text-[10px] mt-0.5 flex items-center gap-1 ${STATUS_STYLES[s.status] ?? "bg-secondary text-muted-foreground"}`}>
+          <Badge
+            className={`shrink-0 capitalize text-[10px] mt-0.5 flex items-center gap-1 ${STATUS_STYLES[s.status] ?? "bg-secondary text-muted-foreground"}`}
+          >
             {isActive && <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />}
             {s.status}
           </Badge>
@@ -728,7 +955,8 @@ function StrategyCard({ s, onClick, onDelete }: {
 
       {/* Delete button */}
       <Button
-        variant="ghost" size="icon-xs"
+        variant="ghost"
+        size="icon-xs"
         onClick={onDelete}
         className="absolute top-3 right-3 md:opacity-0 md:group-hover:opacity-100 text-muted-foreground
                    hover:text-destructive hover:bg-destructive/10 z-10 transition-opacity"
@@ -763,7 +991,8 @@ function fmtEth(p: number): string {
 
 function fmtUsd(p: number): string {
   if (p === 0) return "$0.00";
-  if (p >= 1) return "$" + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (p >= 1)
+    return "$" + p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (p >= 0.01) return "$" + p.toFixed(4);
   if (p >= 0.0001) return "$" + p.toFixed(6);
   return "$" + fmtTiny(p, 3);

@@ -1,22 +1,43 @@
 import { useState, useCallback } from "react";
 import {
-  Search, ShoppingBag, TrendingUp, ArrowUpRight, Users,
-  Clock, Sparkles, Tag, ChevronRight, Star, Zap, Plus, Trash2,
+  Search,
+  ShoppingBag,
+  TrendingUp,
+  ArrowUpRight,
+  Users,
+  Clock,
+  Sparkles,
+  Tag,
+  ChevronRight,
+  Star,
+  Zap,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { useAccount } from "wagmi";
 import { toast } from "sonner";
 import { useRouter } from "../../App";
 import {
-  useMarketplaceListings, useStrategies, usePurchaseListingMutation,
-  useCreateListingMutation, useDelistMutation,
-  type MarketplaceListing, type MarketplaceSort,
+  useMarketplaceListings,
+  useStrategies,
+  usePurchaseListingMutation,
+  useCreateListingMutation,
+  useDelistMutation,
+  type MarketplaceListing,
+  type MarketplaceSort,
 } from "../../lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 /* ══════════════════════════════════════════════════════════════
@@ -149,12 +170,15 @@ export function Marketplace() {
         onClick={() => setCategory(cat.key)}
         className={`group flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-semibold
                     transition-all whitespace-nowrap cursor-pointer
-                    ${active
-            ? "bg-primary/12 text-primary border border-primary/25 shadow-[0_0_12px_rgba(229,160,13,0.08)]"
-            : "text-muted-foreground hover:text-foreground hover:bg-secondary/60 border border-transparent"
-          }`}
+                    ${
+                      active
+                        ? "bg-primary/12 text-primary border border-primary/25 shadow-[0_0_12px_rgba(229,160,13,0.08)]"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60 border border-transparent"
+                    }`}
       >
-        <Icon className={`size-3.5 ${active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"} transition-colors`} />
+        <Icon
+          className={`size-3.5 ${active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"} transition-colors`}
+        />
         {cat.label}
       </button>,
     );
@@ -187,9 +211,16 @@ export function Marketplace() {
   } else {
     for (let idx = 0; idx < gridListings.length; idx++) {
       const listing = gridListings[idx]!;
-      const isSeller = isConnected && address !== undefined && listing.sellerAddress.toLowerCase() === address.toLowerCase();
+      const isSeller =
+        isConnected &&
+        address !== undefined &&
+        listing.sellerAddress.toLowerCase() === address.toLowerCase();
       cards.push(
-        <div key={listing.id} className="animate-fadeSlideUp" style={{ animationDelay: `${idx * 60}ms` }}>
+        <div
+          key={listing.id}
+          className="animate-fadeSlideUp"
+          style={{ animationDelay: `${idx * 60}ms` }}
+        >
           <StrategyStoreCard
             listing={listing}
             isSeller={isSeller}
@@ -235,22 +266,25 @@ export function Marketplace() {
       </div>
 
       {/* ── Purchase confirmation dialog ───────────────────── */}
-      <AlertDialog open={purchaseTarget !== null} onOpenChange={(open) => { if (!open) setPurchaseTarget(null); }}>
+      <AlertDialog
+        open={purchaseTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setPurchaseTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Get this strategy?</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="text-foreground font-medium">"{purchaseTarget?.title}"</span> will be copied
-              to your strategies. You can then customize and run it.
+              <span className="text-foreground font-medium">"{purchaseTarget?.title}"</span> will be
+              copied to your strategies. You can then customize and run it.
               {purchaseTarget !== null && purchaseTarget.priceEth > 0 && (
                 <span className="block mt-2 font-display text-lg text-primary">
                   {purchaseTarget.priceEth} ETH
                 </span>
               )}
               {purchaseTarget !== null && purchaseTarget.priceEth === 0 && (
-                <span className="block mt-2 font-display text-lg text-emerald-400">
-                  Free
-                </span>
+                <span className="block mt-2 font-display text-lg text-emerald-400">Free</span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -264,18 +298,27 @@ export function Marketplace() {
       </AlertDialog>
 
       {/* ── Delist confirmation dialog ──────────────────────── */}
-      <AlertDialog open={delistTarget !== null} onOpenChange={(open) => { if (!open) setDelistTarget(null); }}>
+      <AlertDialog
+        open={delistTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDelistTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove listing?</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="text-foreground font-medium">"{delistTarget?.title}"</span> will be removed
-              from the marketplace. Existing buyers keep their copies.
+              <span className="text-foreground font-medium">"{delistTarget?.title}"</span> will be
+              removed from the marketplace. Existing buyers keep their copies.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={confirmDelist} disabled={delistMutation.isPending}>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={confirmDelist}
+              disabled={delistMutation.isPending}
+            >
               {delistMutation.isPending ? "Removing…" : "Remove Listing"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -288,13 +331,16 @@ export function Marketplace() {
           <AlertDialogHeader>
             <AlertDialogTitle>List a strategy</AlertDialogTitle>
             <AlertDialogDescription>
-              Share one of your strategies on the marketplace. Others can get a copy — your original stays untouched.
+              Share one of your strategies on the marketplace. Others can get a copy — your original
+              stays untouched.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-2">
             {/* Strategy picker */}
             <div>
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1.5">Strategy</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1.5">
+                Strategy
+              </label>
               <select
                 value={sellStrategyId}
                 onChange={(e) => setSellStrategyId(e.target.value)}
@@ -302,7 +348,9 @@ export function Marketplace() {
               >
                 <option value="">Select a strategy…</option>
                 {sellableStrategies.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
                 ))}
               </select>
               {sellableStrategies.length === 0 && (
@@ -313,7 +361,9 @@ export function Marketplace() {
             </div>
             {/* Price */}
             <div>
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1.5">Price (ETH)</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1.5">
+                Price (ETH)
+              </label>
               <div className="flex items-center bg-secondary border border-border rounded-lg overflow-hidden">
                 <input
                   type="number"
@@ -324,13 +374,19 @@ export function Marketplace() {
                   step="0.001"
                   min="0"
                 />
-                <span className="text-muted-foreground text-[10px] font-bold pr-3 select-none">ETH</span>
+                <span className="text-muted-foreground text-[10px] font-bold pr-3 select-none">
+                  ETH
+                </span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">Set to 0 to offer it for free.</p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Set to 0 to offer it for free.
+              </p>
             </div>
             {/* Category */}
             <div>
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1.5">Category</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1.5">
+                Category
+              </label>
               <select
                 value={sellCategory}
                 onChange={(e) => setSellCategory(e.target.value)}
@@ -414,7 +470,9 @@ export function Marketplace() {
       <div className="relative flex-1 overflow-y-auto px-4 md:px-8 pt-3 pb-6">
         {/* Sort controls */}
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mr-1">Sort</span>
+          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mr-1">
+            Sort
+          </span>
           {sortBtns}
           <span className="flex-1" />
           <span className="text-[11px] text-muted-foreground font-mono">
@@ -427,7 +485,11 @@ export function Marketplace() {
           <div className="animate-fadeSlideUp mb-5">
             <FeaturedCard
               listing={featured}
-              isSeller={isConnected && address !== undefined && featured.sellerAddress.toLowerCase() === address.toLowerCase()}
+              isSeller={
+                isConnected &&
+                address !== undefined &&
+                featured.sellerAddress.toLowerCase() === address.toLowerCase()
+              }
               onGet={() => {
                 if (!isConnected) {
                   toast.error("Connect your wallet first (Settings → Wallet)");
@@ -445,20 +507,21 @@ export function Marketplace() {
         )}
 
         {/* ── Card Grid ───────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {cards}
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{cards}</div>
 
         {/* ── Empty state ──────────────────────────────────── */}
         {!isLoading && listings.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="size-20 rounded-2xl bg-primary/5 border border-primary/10
-                            flex items-center justify-center mb-6">
+            <div
+              className="size-20 rounded-2xl bg-primary/5 border border-primary/10
+                            flex items-center justify-center mb-6"
+            >
               <ShoppingBag className="size-9 text-primary/30" />
             </div>
             <h3 className="font-display text-xl text-foreground mb-2">No strategies listed yet</h3>
             <p className="text-muted-foreground text-sm max-w-[340px] leading-relaxed mb-5">
-              Be the first to share a strategy! Create one in the Strategy Builder, then list it here for other traders.
+              Be the first to share a strategy! Create one in the Strategy Builder, then list it
+              here for other traders.
             </p>
             <div className="flex gap-3">
               <Button onClick={() => navigate("/strategy")} className="gap-2">
@@ -466,7 +529,11 @@ export function Marketplace() {
                 Create Strategy
               </Button>
               {isConnected && sellableStrategies.length > 0 && (
-                <Button variant="outline" onClick={() => setShowSellDialog(true)} className="gap-2 border-primary/25 text-primary hover:bg-primary/10">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSellDialog(true)}
+                  className="gap-2 border-primary/25 text-primary hover:bg-primary/10"
+                >
                   <Tag className="size-4" />
                   List Existing
                 </Button>
@@ -483,7 +550,12 @@ export function Marketplace() {
    Featured Card — highlighted top performer
    ══════════════════════════════════════════════════════════════ */
 
-function FeaturedCard({ listing, isSeller, onGet, onDelist }: {
+function FeaturedCard({
+  listing,
+  isSeller,
+  onGet,
+  onDelist,
+}: {
   listing: MarketplaceListing;
   isSeller: boolean;
   onGet: () => void;
@@ -542,15 +614,24 @@ function FeaturedCard({ listing, isSeller, onGet, onDelist }: {
         <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 sm:gap-4 shrink-0">
           {/* PnL hero */}
           <div className="text-right">
-            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Performance</span>
-            <span className={`font-display text-2xl sm:text-3xl leading-none font-bold tabular-nums ${
-              isPositive ? "text-emerald-400" : "text-red-400"
-            }`}>
-              {isPositive ? "+" : ""}{pnl.toFixed(4)}
+            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">
+              Performance
+            </span>
+            <span
+              className={`font-display text-2xl sm:text-3xl leading-none font-bold tabular-nums ${
+                isPositive ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {isPositive ? "+" : ""}
+              {pnl.toFixed(4)}
             </span>
             <span className="text-muted-foreground text-[11px] font-mono ml-1.5">ETH</span>
             <div className="flex items-center gap-2 mt-1 justify-end">
-              <StatPill label="Win" value={`${listing.performance.winRate.toFixed(0)}%`} positive={listing.performance.winRate >= 50} />
+              <StatPill
+                label="Win"
+                value={`${listing.performance.winRate.toFixed(0)}%`}
+                positive={listing.performance.winRate >= 50}
+              />
               <StatPill label="Trades" value={String(listing.performance.totalTrades)} />
             </div>
           </div>
@@ -563,7 +644,10 @@ function FeaturedCard({ listing, isSeller, onGet, onDelist }: {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={(e) => { e.stopPropagation(); onDelist(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelist();
+                  }}
                   className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-[11px] gap-1"
                 >
                   <Trash2 className="size-3" />
@@ -573,7 +657,9 @@ function FeaturedCard({ listing, isSeller, onGet, onDelist }: {
               <Button
                 onClick={onGet}
                 className={`gap-2 min-w-[140px] shadow-[0_0_20px_rgba(229,160,13,0.1)] ${
-                  listing.owned ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 shadow-none" : ""
+                  listing.owned
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 shadow-none"
+                    : ""
                 }`}
                 variant={listing.owned ? "outline" : "default"}
               >
@@ -598,7 +684,12 @@ function FeaturedCard({ listing, isSeller, onGet, onDelist }: {
    Strategy Store Card
    ══════════════════════════════════════════════════════════════ */
 
-function StrategyStoreCard({ listing, isSeller, onGet, onDelist }: {
+function StrategyStoreCard({
+  listing,
+  isSeller,
+  onGet,
+  onDelist,
+}: {
   listing: MarketplaceListing;
   isSeller: boolean;
   onGet: () => void;
@@ -615,7 +706,9 @@ function StrategyStoreCard({ listing, isSeller, onGet, onDelist }: {
                  hover:shadow-[0_0_28px_rgba(229,160,13,0.04)]"
     >
       {/* Subtle top accent — color reflects performance */}
-      <div className={`h-[3px] w-full ${isPositive ? "bg-linear-to-r from-emerald-500/60 via-emerald-400/30 to-transparent" : "bg-linear-to-r from-red-500/40 via-red-400/20 to-transparent"}`} />
+      <div
+        className={`h-[3px] w-full ${isPositive ? "bg-linear-to-r from-emerald-500/60 via-emerald-400/30 to-transparent" : "bg-linear-to-r from-red-500/40 via-red-400/20 to-transparent"}`}
+      />
 
       <div className="flex-1 p-5">
         {/* Category + active badge */}
@@ -645,16 +738,25 @@ function StrategyStoreCard({ listing, isSeller, onGet, onDelist }: {
         {/* Performance stats row */}
         <div className="flex items-center gap-3 mb-3">
           <div className="flex-1 rounded-xl bg-secondary/50 border border-border/30 px-3 py-2">
-            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest block mb-0.5">PnL</span>
-            <span className={`font-mono text-[14px] font-bold leading-none tabular-nums ${
-              isPositive ? "text-emerald-400" : "text-red-400"
-            }`}>
-              {isPositive ? "+" : ""}{pnl >= 1 || pnl <= -1 ? pnl.toFixed(3) : pnl.toFixed(5)}
+            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest block mb-0.5">
+              PnL
+            </span>
+            <span
+              className={`font-mono text-[14px] font-bold leading-none tabular-nums ${
+                isPositive ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {isPositive ? "+" : ""}
+              {pnl >= 1 || pnl <= -1 ? pnl.toFixed(3) : pnl.toFixed(5)}
             </span>
             <span className="text-muted-foreground/50 text-[9px] ml-1">ETH</span>
           </div>
           <div className="flex flex-col gap-1.5">
-            <StatPill label="Win" value={`${listing.performance.winRate.toFixed(0)}%`} positive={listing.performance.winRate >= 50} />
+            <StatPill
+              label="Win"
+              value={`${listing.performance.winRate.toFixed(0)}%`}
+              positive={listing.performance.winRate >= 50}
+            />
             <StatPill label="Trades" value={String(listing.performance.totalTrades)} />
           </div>
         </div>
@@ -680,7 +782,10 @@ function StrategyStoreCard({ listing, isSeller, onGet, onDelist }: {
             <Button
               size="sm"
               variant="ghost"
-              onClick={(e) => { e.stopPropagation(); onDelist(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelist();
+              }}
               className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-[11px] gap-1"
             >
               <Trash2 className="size-3" />
@@ -690,13 +795,20 @@ function StrategyStoreCard({ listing, isSeller, onGet, onDelist }: {
           <Button
             size="sm"
             onClick={onGet}
-            className={listing.owned
-              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 shadow-none text-[11px]"
-              : "gap-1.5 text-[11px] shadow-[0_0_16px_rgba(229,160,13,0.08)]"
+            className={
+              listing.owned
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 shadow-none text-[11px]"
+                : "gap-1.5 text-[11px] shadow-[0_0_16px_rgba(229,160,13,0.08)]"
             }
             variant={listing.owned ? "outline" : "default"}
           >
-            {listing.owned ? (isSeller ? "Your Listing" : "Owned") : (
+            {listing.owned ? (
+              isSeller ? (
+                "Your Listing"
+              ) : (
+                "Owned"
+              )
+            ) : (
               <>
                 Get Strategy
                 <ChevronRight className="size-3.5" />
@@ -716,9 +828,7 @@ function StrategyStoreCard({ listing, isSeller, onGet, onDelist }: {
 function CategoryBadge({ category }: { category: string }) {
   const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.general!;
   return (
-    <Badge className={`text-[9px] capitalize border ${colors}`}>
-      {category.replace("-", " ")}
-    </Badge>
+    <Badge className={`text-[9px] capitalize border ${colors}`}>{category.replace("-", " ")}</Badge>
   );
 }
 
@@ -730,7 +840,15 @@ function WalletBadge({ address }: { address: string }) {
   );
 }
 
-function StatPill({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
+function StatPill({
+  label,
+  value,
+  positive,
+}: {
+  label: string;
+  value: string;
+  positive?: boolean;
+}) {
   let color = "text-foreground";
   if (positive === true) color = "text-emerald-400";
   if (positive === false) color = "text-red-400";
@@ -752,7 +870,9 @@ function PriceTag({ priceEth }: { priceEth: number }) {
   }
   return (
     <span className="flex items-center gap-1.5">
-      <span className="font-display text-[15px] font-bold text-foreground tabular-nums">{priceEth}</span>
+      <span className="font-display text-[15px] font-bold text-foreground tabular-nums">
+        {priceEth}
+      </span>
       <span className="text-muted-foreground text-[10px] font-bold">ETH</span>
     </span>
   );
@@ -760,7 +880,10 @@ function PriceTag({ priceEth }: { priceEth: number }) {
 
 function SkeletonCard({ delay }: { delay: number }) {
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden animate-fadeSlideUp" style={{ animationDelay: `${delay}ms` }}>
+    <div
+      className="rounded-2xl border bg-card overflow-hidden animate-fadeSlideUp"
+      style={{ animationDelay: `${delay}ms` }}
+    >
       <Skeleton className="h-[3px] w-full" />
       <div className="p-5 space-y-3">
         <div className="flex gap-2">

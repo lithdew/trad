@@ -1,11 +1,25 @@
 import { useState, useRef, useEffect, type ComponentType } from "react";
-import { type UIMessage, type UIMessagePart, type UIDataTypes, type UITools, isToolUIPart, getToolName } from "ai";
+import {
+  type UIMessage,
+  type UIMessagePart,
+  type UIDataTypes,
+  type UITools,
+  isToolUIPart,
+  getToolName,
+} from "ai";
 import { Streamdown } from "streamdown";
 import { createCodePlugin } from "@streamdown/code";
 import "streamdown/styles.css";
 import {
-  Loader2, Terminal, FileText, Eye, ChevronRight,
-  CheckCircle2, XCircle, Minus, type LucideProps,
+  Loader2,
+  Terminal,
+  FileText,
+  Eye,
+  ChevronRight,
+  CheckCircle2,
+  XCircle,
+  Minus,
+  type LucideProps,
 } from "lucide-react";
 import { LiveReasoning } from "./LiveReasoning";
 import { CollapsedReasoning } from "./CollapsedReasoning";
@@ -28,9 +42,20 @@ interface ToolInvocation {
 
 /* ── Part groups ──────────────────────────────────────────── */
 
-interface ReasoningGroup { kind: "reasoning"; text: string; hasStreaming: boolean }
-interface TextGroup { kind: "text"; text: string; isStreaming: boolean }
-interface ToolGroup { kind: "tool"; invocations: ToolInvocation[] }
+interface ReasoningGroup {
+  kind: "reasoning";
+  text: string;
+  hasStreaming: boolean;
+}
+interface TextGroup {
+  kind: "text";
+  text: string;
+  isStreaming: boolean;
+}
+interface ToolGroup {
+  kind: "tool";
+  invocations: ToolInvocation[];
+}
 
 type PartGroup = ReasoningGroup | TextGroup | ToolGroup;
 
@@ -72,7 +97,11 @@ function buildPartGroups(parts: UIMessage["parts"]): PartGroup[] {
         last.text += part.text;
         if (part.state === "streaming") last.hasStreaming = true;
       } else {
-        groups.push({ kind: "reasoning", text: part.text, hasStreaming: part.state === "streaming" });
+        groups.push({
+          kind: "reasoning",
+          text: part.text,
+          hasStreaming: part.state === "streaming",
+        });
       }
     } else if (part.type === "text") {
       const last = groups.length > 0 ? groups[groups.length - 1] : undefined;
@@ -106,8 +135,14 @@ function getMessageText(msg: UIMessage): string {
 
 /* ── Chat Bubble ─────────────────────────────────────────── */
 
-export function ChatBubble({ msg, isLastAssistant, chatStatus }: {
-  msg: UIMessage; isLastAssistant: boolean; chatStatus: string;
+export function ChatBubble({
+  msg,
+  isLastAssistant,
+  chatStatus,
+}: {
+  msg: UIMessage;
+  isLastAssistant: boolean;
+  chatStatus: string;
 }) {
   const isStreaming = isLastAssistant && (chatStatus === "streaming" || chatStatus === "submitted");
 
@@ -118,10 +153,14 @@ export function ChatBubble({ msg, isLastAssistant, chatStatus }: {
           <div className="size-5 rounded-md bg-muted flex items-center justify-center">
             <span className="text-muted-foreground text-[10px] font-bold">U</span>
           </div>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em]">You</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em]">
+            You
+          </span>
         </div>
         <div className="text-[13.5px] leading-[1.65] pl-7 text-foreground">
-          <Streamdown plugins={sdPlugins} mode="static">{getMessageText(msg)}</Streamdown>
+          <Streamdown plugins={sdPlugins} mode="static">
+            {getMessageText(msg)}
+          </Streamdown>
         </div>
       </div>
     );
@@ -134,9 +173,11 @@ export function ChatBubble({ msg, isLastAssistant, chatStatus }: {
     <div className="space-y-3">
       {groups.map((group, i) => {
         if (group.kind === "reasoning") {
-          return group.hasStreaming
-            ? <LiveReasoning key={i} text={group.text} />
-            : <CollapsedReasoning key={i} text={group.text} />;
+          return group.hasStreaming ? (
+            <LiveReasoning key={i} text={group.text} />
+          ) : (
+            <CollapsedReasoning key={i} text={group.text} />
+          );
         }
         if (group.kind === "text") {
           return (
@@ -145,12 +186,16 @@ export function ChatBubble({ msg, isLastAssistant, chatStatus }: {
                 <div className="size-5 rounded-md bg-primary/15 flex items-center justify-center">
                   <span className="font-display text-primary text-[10px]">t</span>
                 </div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em]">trad</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em]">
+                  trad
+                </span>
               </div>
               <div className="text-[13.5px] leading-[1.65] pl-7 text-text-secondary">
-                <Streamdown plugins={sdPlugins}
+                <Streamdown
+                  plugins={sdPlugins}
                   animated={{ animation: "blurIn", duration: 200, easing: "ease-out" }}
-                  isAnimating={group.isStreaming}>
+                  isAnimating={group.isStreaming}
+                >
                   {group.text}
                 </Streamdown>
               </div>
@@ -168,7 +213,9 @@ export function ChatBubble({ msg, isLastAssistant, chatStatus }: {
           <div className="size-5 rounded-md bg-primary/15 flex items-center justify-center">
             <span className="font-display text-primary text-[10px]">t</span>
           </div>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em]">trad</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.08em]">
+            trad
+          </span>
           <span className="size-1.5 rounded-full bg-primary animate-pulse" />
         </div>
       )}
@@ -222,16 +269,27 @@ function ToolCard({ inv }: { inv: ToolInvocation }) {
         ? "border-l-emerald-400"
         : "border-l-foreground/10";
 
-  const iconColor = active ? "text-cyan-400" : errored ? "text-red-400" : done ? "text-emerald-400" : "text-foreground/30";
+  const iconColor = active
+    ? "text-cyan-400"
+    : errored
+      ? "text-red-400"
+      : done
+        ? "text-emerald-400"
+        : "text-foreground/30";
 
   return (
-    <div ref={cardRef} className={`border-l-2 ${borderColor} rounded-r-lg bg-[#09090c] overflow-hidden transition-all duration-300`}>
+    <div
+      ref={cardRef}
+      className={`border-l-2 ${borderColor} rounded-r-lg bg-[#09090c] overflow-hidden transition-all duration-300`}
+    >
       {/* Header — always clickable */}
       <div
         className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none hover:bg-white/2 transition-colors"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <ChevronRight className={`size-3 text-foreground/30 transition-transform duration-200 shrink-0 ${collapsed ? "" : "rotate-90"}`} />
+        <ChevronRight
+          className={`size-3 text-foreground/30 transition-transform duration-200 shrink-0 ${collapsed ? "" : "rotate-90"}`}
+        />
 
         {active ? (
           <Loader2 className="size-3.5 text-cyan-400 animate-spin shrink-0" />
@@ -239,18 +297,25 @@ function ToolCard({ inv }: { inv: ToolInvocation }) {
           <Icon className={`size-3.5 shrink-0 ${iconColor}`} />
         )}
 
-        <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-px rounded shrink-0 ${
-          active ? "bg-cyan-400/10 text-cyan-400"
-          : errored ? "bg-red-400/10 text-red-400"
-          : done ? "bg-emerald-400/8 text-emerald-400/80"
-          : "bg-foreground/5 text-foreground/30"
-        }`}>
+        <span
+          className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-px rounded shrink-0 ${
+            active
+              ? "bg-cyan-400/10 text-cyan-400"
+              : errored
+                ? "bg-red-400/10 text-red-400"
+                : done
+                  ? "bg-emerald-400/8 text-emerald-400/80"
+                  : "bg-foreground/5 text-foreground/30"
+          }`}
+        >
           {action}
         </span>
 
-        <span className={`text-[12px] font-mono min-w-0 truncate ${
-          active ? "text-cyan-200" : errored ? "text-red-200" : "text-foreground/70"
-        }`}>
+        <span
+          className={`text-[12px] font-mono min-w-0 truncate ${
+            active ? "text-cyan-200" : errored ? "text-red-200" : "text-foreground/70"
+          }`}
+        >
           {target}
         </span>
 
@@ -265,8 +330,10 @@ function ToolCard({ inv }: { inv: ToolInvocation }) {
       {/* Output — plain <pre>, no Streamdown chrome */}
       {!collapsed && hasOutput && (
         <div className="px-3 pb-2.5">
-          <pre className="font-mono text-[10.5px] leading-[1.7] whitespace-pre-wrap wrap-break-word
-            bg-black/40 rounded-md px-3 py-2.5 max-h-52 overflow-y-auto overflow-x-hidden text-foreground/50">
+          <pre
+            className="font-mono text-[10.5px] leading-[1.7] whitespace-pre-wrap wrap-break-word
+            bg-black/40 rounded-md px-3 py-2.5 max-h-52 overflow-y-auto overflow-x-hidden text-foreground/50"
+          >
             {outputText}
           </pre>
         </div>
@@ -286,8 +353,10 @@ function ToolCard({ inv }: { inv: ToolInvocation }) {
 
 const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
   bash: Terminal,
-  readFile: Eye, read_file: Eye,
-  writeFile: FileText, write_file: FileText,
+  readFile: Eye,
+  read_file: Eye,
+  writeFile: FileText,
+  write_file: FileText,
 };
 
 function resolveIcon(toolName: string) {
@@ -320,7 +389,9 @@ function resolveTarget(inv: ToolInvocation) {
     const name = filePath.split("/").pop() ?? filePath;
     const done = inv.state === "output-available";
     if (done) {
-      const content = getOutputString(inv.output, "content") ?? (typeof inv.output === "string" ? inv.output : null);
+      const content =
+        getOutputString(inv.output, "content") ??
+        (typeof inv.output === "string" ? inv.output : null);
       if (content !== null) return `${name}  (${content.split("\n").length} lines)`;
     }
     return name;

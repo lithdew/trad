@@ -165,22 +165,13 @@ export const generateRoutes = {
           raw: string,
           controller: ReadableStreamDefaultController<Uint8Array>,
         ) => {
-          if (
-            raw === "" ||
-            raw === "```json" ||
-            raw === "```" ||
-            raw === "```jsonl"
-          )
-            return;
+          if (raw === "" || raw === "```json" || raw === "```" || raw === "```jsonl") return;
           const fixed = raw.replace(/\{\{\s*(\w+)\s*\}\}/g, "{$1}");
           try {
             JSON.parse(fixed);
             controller.enqueue(enc.encode(fixed + "\n"));
           } catch {
-            console.warn(
-              "[/api/generate] Skipping malformed spec line:",
-              fixed.slice(0, 100),
-            );
+            console.warn("[/api/generate] Skipping malformed spec line:", fixed.slice(0, 100));
           }
         };
 

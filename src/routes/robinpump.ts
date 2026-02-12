@@ -19,11 +19,7 @@ export const robinpumpRoutes = {
           url.searchParams.get("sort") === "mc" ? "marketCap" : "newest";
         const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
         const offset = parseInt(url.searchParams.get("offset") ?? "0", 10);
-        const coins = await RobinPump.fetchCoins(
-          sort,
-          Math.min(limit, 200),
-          offset,
-        );
+        const coins = await RobinPump.fetchCoins(sort, Math.min(limit, 200), offset);
         return Response.json(coins);
       } catch (e) {
         console.error("GET /api/robinpump/coins error:", e);
@@ -206,7 +202,11 @@ export const robinpumpRoutes = {
           const rpcUrl = process.env.BASE_RPC_URL ?? "https://mainnet.base.org";
           const account = privateKeyToAccount(operatorKey);
           const publicClient = createPublicClient({ chain: base, transport: http(rpcUrl) });
-          const walletClient = createWalletClient({ account, chain: base, transport: http(rpcUrl) });
+          const walletClient = createWalletClient({
+            account,
+            chain: base,
+            transport: http(rpcUrl),
+          });
 
           const userAddr = getAddress(walletAddress);
           const delegate = getAddress(delegateAddress);
@@ -246,7 +246,8 @@ export const robinpumpRoutes = {
               const newTokenReserve = newEthReserve > 0n ? k / newEthReserve : 0n;
 
               let expectedTokensOut = 0n;
-              if (newTokenReserve < tokenReserve) expectedTokensOut = tokenReserve - newTokenReserve;
+              if (newTokenReserve < tokenReserve)
+                expectedTokensOut = tokenReserve - newTokenReserve;
 
               const slip = BigInt(slippageBps);
               minTokensOut = (expectedTokensOut * (BPS - slip)) / BPS;
@@ -291,13 +292,7 @@ export const robinpumpRoutes = {
             address: delegate,
             abi: tradDelegateAbi,
             functionName: "executeSell",
-            args: [
-              userAddr,
-              pair,
-              tokenAmount,
-              minEthOut,
-              deadline,
-            ],
+            args: [userAddr, pair, tokenAmount, minEthOut, deadline],
           });
           const receipt = await publicClient.waitForTransactionReceipt({ hash });
           return Response.json({ hash, status: receipt.status });
@@ -320,11 +315,19 @@ export const robinpumpRoutes = {
 
         const pairInfo = await rp.getPairInfo(pair);
         const tokenAmount = parseEther(amount);
-        const result = await rp.sell(pair, pairInfo.tokenAddress, tokenAmount, risk.defaultSlippageBps / 10_000);
+        const result = await rp.sell(
+          pair,
+          pairInfo.tokenAddress,
+          tokenAmount,
+          risk.defaultSlippageBps / 10_000,
+        );
         return Response.json({ hash: result.hash, status: result.receipt.status });
       } catch (e) {
         console.error("POST /api/robinpump/trade error:", e);
-        return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+        return Response.json(
+          { error: e instanceof Error ? e.message : String(e) },
+          { status: 500 },
+        );
       }
     },
   },

@@ -3,6 +3,7 @@
 This file mirrors the Google Form fields and contains **copy/paste-ready** answers where possible.
 
 **Important**
+
 - **Do not commit personal data** (emails, Twitter handles, LinkedIn URLs) if you don’t want them public. Those fields are marked `PRIVATE`.
 - Do **not** paste secrets (private keys, admin tokens). Never include `.env` files in the submission.
 
@@ -56,14 +57,14 @@ Separate emails using spaces:
 
 Pick one (all are under 150 chars):
 
-1) **Primary**  
-“Gives non‑technical traders plain‑English crypto automation—any strategy, low fees, and safe on‑chain execution via delegation.”
+1. **Primary**  
+   “Gives non‑technical traders plain‑English crypto automation—any strategy, low fees, and safe on‑chain execution via delegation.”
 
-2) **More direct**  
-“Offers plain‑English → deployable RobinPump bots with arbitrary strategies, dry‑run by default, and safe on‑chain execution.”
+2. **More direct**  
+   “Offers plain‑English → deployable RobinPump bots with arbitrary strategies, dry‑run by default, and safe on‑chain execution.”
 
-3) **DeFi angle**  
-“Gives RobinPump traders AI-built bots for any strategy—execution on-chain with delegation, risk limits, slippage bounds, and monitoring UI.”
+3. **DeFi angle**  
+   “Gives RobinPump traders AI-built bots for any strategy—execution on-chain with delegation, risk limits, slippage bounds, and monitoring UI.”
 
 ---
 
@@ -141,4 +142,3 @@ trad is a full‑stack Bun + React app with an on‑chain execution path on **Ba
 
 - Work is original and satisfies judging criteria: ✅ `Yes`
 - Submission requirements satisfied: ✅ `Yes! 100%`
-

@@ -37,13 +37,18 @@ if (chain === null) {
   process.exit(1);
 }
 
-const rpcUrl = chain.id === base.id ? (process.env.BASE_RPC_URL ?? null) : (process.env.BASE_SEPOLIA_RPC_URL ?? null);
+const rpcUrl =
+  chain.id === base.id
+    ? (process.env.BASE_RPC_URL ?? null)
+    : (process.env.BASE_SEPOLIA_RPC_URL ?? null);
 if (rpcUrl == null) {
   if (chain.id === base.id) {
     console.error("Error: BASE_RPC_URL environment variable is required for CHAIN=base.");
     console.error("  Example: https://base-mainnet.g.alchemy.com/v2/YOUR_KEY");
   } else {
-    console.error("Error: BASE_SEPOLIA_RPC_URL environment variable is required for CHAIN=base-sepolia.");
+    console.error(
+      "Error: BASE_SEPOLIA_RPC_URL environment variable is required for CHAIN=base-sepolia.",
+    );
     console.error("  Example: https://base-sepolia.g.alchemy.com/v2/YOUR_KEY");
   }
   process.exit(1);
@@ -71,7 +76,9 @@ try {
 } catch {
   console.error("Error: Missing compiled bytecode at contracts/out/TradDelegate.bin");
   console.error("Compile first (from repo root):");
-  console.error("  solc --overwrite --optimize --abi --bin contracts/TradDelegate.sol -o contracts/out");
+  console.error(
+    "  solc --overwrite --optimize --abi --bin contracts/TradDelegate.sol -o contracts/out",
+  );
   process.exit(1);
 }
 
@@ -139,7 +146,9 @@ console.log();
 console.log("Next steps:");
 console.log(`  1. Allow RobinPump pair codehash:`);
 console.log(`     cast codehash <SAMPLE_ROBINPUMP_PAIR_ADDRESS> --rpc-url ${rpcUrl}`);
-console.log(`     cast send ${receipt.contractAddress} "setPairCodehashAllowed(bytes32,bool)" <PAIR_CODEHASH> true`);
+console.log(
+  `     cast send ${receipt.contractAddress} "setPairCodehashAllowed(bytes32,bool)" <PAIR_CODEHASH> true`,
+);
 console.log(`  2. Set the operator:`);
 console.log(`     cast send ${receipt.contractAddress} "setOperator(address)" <OPERATOR_ADDRESS>`);
 console.log(`  3. (Recommended) Set an emergency guardian that can pause:`);

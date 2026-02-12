@@ -57,4 +57,3 @@ bun run lint
 
 - `TRAD.md` — architecture + runtime overview
 - `ROBINPUMP.md` — RobinPump integration notes
-

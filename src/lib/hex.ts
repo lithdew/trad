@@ -18,4 +18,3 @@ export function isHexPrivateKey(value: string): value is `0x${string}` {
   }
   return true;
 }
-

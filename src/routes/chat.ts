@@ -169,7 +169,10 @@ export const chatRoutes = {
 
         const rawMessages = (body as { messages?: unknown }).messages;
         if (!Array.isArray(rawMessages)) {
-          return Response.json({ error: "Bad request: messages must be an array" }, { status: 400 });
+          return Response.json(
+            { error: "Bad request: messages must be an array" },
+            { status: 400 },
+          );
         }
         const messages = rawMessages as UIMessage[];
 
@@ -211,11 +214,8 @@ export const chatRoutes = {
         const timeContext = `\n\nCURRENT TIME: ${now.toISOString()} (UTC)`;
 
         const sandboxCode =
-          currentCode !== undefined && currentCode !== ""
-            ? currentCode
-            : undefined;
-        const { tools: sandboxTools, sandbox } =
-          await createStrategySandbox(sandboxCode);
+          currentCode !== undefined && currentCode !== "" ? currentCode : undefined;
+        const { tools: sandboxTools, sandbox } = await createStrategySandbox(sandboxCode);
 
         const result = streamText({
           model: anthropic("claude-sonnet-4-5"),

@@ -143,21 +143,20 @@ async function cmdList(sort: "newest" | "marketCap", limit: number) {
   const padName = 28;
   const padSym = 12;
   console.log(
-    `  ${"Name".padEnd(padName)} ${"Symbol".padEnd(padSym)} ${"Price (USD)".padStart(14)} ${"Vol (ETH)".padStart(11)} ${"Trades".padStart(7)} ${"Age".padStart(8)} Pair`
+    `  ${"Name".padEnd(padName)} ${"Symbol".padEnd(padSym)} ${"Price (USD)".padStart(14)} ${"Vol (ETH)".padStart(11)} ${"Trades".padStart(7)} ${"Age".padStart(8)} Pair`,
   );
   console.log("  " + "─".repeat(110));
 
   for (const c of coins) {
     const name = c.name.length > padName - 1 ? c.name.slice(0, padName - 2) + "…" : c.name;
     const sym = c.symbol.length > padSym - 1 ? c.symbol.slice(0, padSym - 2) + "…" : c.symbol;
-    const priceStr = c.lastPriceUsd < 0.01
-      ? c.lastPriceUsd.toExponential(2)
-      : `$${c.lastPriceUsd.toFixed(4)}`;
+    const priceStr =
+      c.lastPriceUsd < 0.01 ? c.lastPriceUsd.toExponential(2) : `$${c.lastPriceUsd.toFixed(4)}`;
     const volStr = c.totalVolumeEth.toFixed(4);
     const grad = c.graduated ? " [GRAD]" : "";
 
     console.log(
-      `  ${name.padEnd(padName)} ${sym.padEnd(padSym)} ${priceStr.padStart(14)} ${volStr.padStart(11)} ${String(c.tradeCount).padStart(7)} ${timeAgo(c.createdAt).padStart(8)} ${c.pairAddress}${grad}`
+      `  ${name.padEnd(padName)} ${sym.padEnd(padSym)} ${priceStr.padStart(14)} ${volStr.padStart(11)} ${String(c.tradeCount).padStart(7)} ${timeAgo(c.createdAt).padStart(8)} ${c.pairAddress}${grad}`,
     );
   }
   console.log(`\n  Total: ${coins.length} coins\n`);
@@ -177,10 +176,14 @@ async function cmdDetail(pairInput: string) {
   console.log(`  Pair:          ${coin.pairAddress}`);
   console.log(`  Token:         ${coin.tokenAddress}`);
   console.log(`  Creator:       ${coin.creator}`);
-  console.log(`  Created:       ${new Date(coin.createdAt * 1000).toISOString()} (${timeAgo(coin.createdAt)})`);
+  console.log(
+    `  Created:       ${new Date(coin.createdAt * 1000).toISOString()} (${timeAgo(coin.createdAt)})`,
+  );
   console.log(`  Graduated:     ${coin.graduated}`);
   console.log(`  Price (ETH):   ${coin.lastPriceEth.toExponential(4)}`);
-  console.log(`  Price (USD):   $${coin.lastPriceUsd < 0.01 ? coin.lastPriceUsd.toExponential(4) : coin.lastPriceUsd.toFixed(6)}`);
+  console.log(
+    `  Price (USD):   $${coin.lastPriceUsd < 0.01 ? coin.lastPriceUsd.toExponential(4) : coin.lastPriceUsd.toFixed(6)}`,
+  );
   console.log(`  Volume (ETH):  ${coin.totalVolumeEth}`);
   console.log(`  ETH Collected: ${coin.ethCollected}`);
   console.log(`  Trade Count:   ${coin.tradeCount}`);
@@ -206,7 +209,7 @@ async function cmdTrades(pairInput: string, limit: number) {
   }
 
   console.log(
-    `  ${"Side".padEnd(5)} ${"ETH".padStart(14)} ${"Tokens".padStart(18)} ${"Price (USD)".padStart(14)} ${"Trader".padEnd(12)} ${"When".padStart(8)} TX`
+    `  ${"Side".padEnd(5)} ${"ETH".padStart(14)} ${"Tokens".padStart(18)} ${"Price (USD)".padStart(14)} ${"Trader".padEnd(12)} ${"When".padStart(8)} TX`,
   );
   console.log("  " + "─".repeat(100));
 
@@ -218,7 +221,7 @@ async function cmdTrades(pairInput: string, limit: number) {
     const trader = t.trader.slice(0, 6) + "…" + t.trader.slice(-4);
 
     console.log(
-      `  ${side} ${eth.padStart(14)} ${tokens.padStart(18)} ${price.padStart(14)} ${trader.padEnd(12)} ${timeAgo(t.timestamp).padStart(8)} ${t.txHash.slice(0, 18)}…`
+      `  ${side} ${eth.padStart(14)} ${tokens.padStart(18)} ${price.padStart(14)} ${trader.padEnd(12)} ${timeAgo(t.timestamp).padStart(8)} ${t.txHash.slice(0, 18)}…`,
     );
   }
   console.log();

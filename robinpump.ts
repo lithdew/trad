@@ -459,7 +459,12 @@ class RobinPump {
    *                      Pass the result of getTokenBalance() to sell all.
    * @param slippage      Fraction 0-1, e.g. 0.05 for 5 %. Defaults to 0.
    */
-  async sell(pairAddress: string, tokenAddress: string, tokenAmount: bigint, slippage = 0): Promise<TxResult> {
+  async sell(
+    pairAddress: string,
+    tokenAddress: string,
+    tokenAmount: bigint,
+    slippage = 0,
+  ): Promise<TxResult> {
     const pair = getAddress(pairAddress);
     const token = getAddress(tokenAddress);
 
@@ -608,10 +613,7 @@ class RobinPump {
    */
   async listCoins(blockRange = 50_000): Promise<CoinListing[]> {
     const latestBlock = await this.publicClient.getBlockNumber();
-    const fromBlock =
-      latestBlock > BigInt(blockRange)
-        ? latestBlock - BigInt(blockRange)
-        : 0n;
+    const fromBlock = latestBlock > BigInt(blockRange) ? latestBlock - BigInt(blockRange) : 0n;
 
     const transferTopic =
       "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" as `0x${string}`;
@@ -622,9 +624,7 @@ class RobinPump {
     // This endpoint supports large block ranges even on the free tier.
     // Falls back to eth_getLogs in tiny 10-block chunks for other RPCs.
     const rpcUrl =
-      this.walletClient.transport.url ??
-      process.env.BASE_RPC_URL ??
-      "https://mainnet.base.org";
+      this.walletClient.transport.url ?? process.env.BASE_RPC_URL ?? "https://mainnet.base.org";
 
     const factoryTxHashes = new Set<string>();
 
@@ -669,13 +669,9 @@ class RobinPump {
     if (factoryTxHashes.size === 0) {
       const chunkSize = 10n;
       // Only scan the most recent portion to keep it feasible
-      const scanFrom =
-        latestBlock - 2_000n > fromBlock ? latestBlock - 2_000n : fromBlock;
+      const scanFrom = latestBlock - 2_000n > fromBlock ? latestBlock - 2_000n : fromBlock;
       for (let start = scanFrom; start <= latestBlock; start += chunkSize) {
-        const end =
-          start + chunkSize - 1n > latestBlock
-            ? latestBlock
-            : start + chunkSize - 1n;
+        const end = start + chunkSize - 1n > latestBlock ? latestBlock : start + chunkSize - 1n;
         try {
           const logs = await this.publicClient.getLogs({
             address: FACTORY_ADDRESS,
@@ -705,10 +701,7 @@ class RobinPump {
         });
 
         for (const rlog of receipt.logs) {
-          if (
-            rlog.topics[0] !== transferTopic ||
-            rlog.topics[1] !== nullTopic
-          ) continue;
+          if (rlog.topics[0] !== transferTopic || rlog.topics[1] !== nullTopic) continue;
 
           const mintedAmount = BigInt(rlog.data);
           if (mintedAmount !== oneBillion) continue;
@@ -737,11 +730,7 @@ class RobinPump {
 
     // Sort newest first
     coins.sort((a, b) =>
-      a.blockNumber > b.blockNumber
-        ? -1
-        : a.blockNumber < b.blockNumber
-          ? 1
-          : 0
+      a.blockNumber > b.blockNumber ? -1 : a.blockNumber < b.blockNumber ? 1 : 0,
     );
 
     return coins;
@@ -894,10 +883,7 @@ class RobinPump {
   /**
    * Fetch recent trades for a coin from the subgraph.
    */
-  static async fetchTrades(
-    pairAddress: string,
-    limit = 20,
-  ): Promise<SubgraphTrade[]> {
+  static async fetchTrades(pairAddress: string, limit = 20): Promise<SubgraphTrade[]> {
     const id = pairAddress.toLowerCase();
     const query = `{
       trades(

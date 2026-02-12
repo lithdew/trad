@@ -7,7 +7,15 @@
 
 import { prisma } from "../db";
 import { RobinPump } from "../../robinpump";
-import { decodeEventLog, formatEther, parseEther, createPublicClient, createWalletClient, http, getAddress } from "viem";
+import {
+  decodeEventLog,
+  formatEther,
+  parseEther,
+  createPublicClient,
+  createWalletClient,
+  http,
+  getAddress,
+} from "viem";
 import { base } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import { tradDelegateAbi } from "../../contracts/abi";
@@ -262,7 +270,10 @@ function validateStrategyCode(raw: string) {
     { re: /\bXMLHttpRequest\b/, message: "XMLHttpRequest is not allowed in strategies" },
     { re: /\bDeno\b/, message: "Deno globals are not allowed in strategies" },
     { re: /\b__proto__\b/, message: "__proto__ is not allowed in strategies" },
-    { re: /\bconstructor\s*\.\s*constructor\b/, message: "constructor.constructor is not allowed in strategies" },
+    {
+      re: /\bconstructor\s*\.\s*constructor\b/,
+      message: "constructor.constructor is not allowed in strategies",
+    },
   ];
 
   for (const rule of banned) {
@@ -382,7 +393,9 @@ function buildApi(state: RunningStrategy) {
         throw new Error(`Trade limit reached (maxTradesPerRun=${risk.maxTradesPerRun})`);
       }
       if (ethAmount > risk.maxEthPerTrade) {
-        throw new Error(`Risk limit: ethAmount (${ethAmount}) > maxEthPerTrade (${risk.maxEthPerTrade})`);
+        throw new Error(
+          `Risk limit: ethAmount (${ethAmount}) > maxEthPerTrade (${risk.maxEthPerTrade})`,
+        );
       }
       if (state.budgets.ethSpentThisRun + ethAmount > risk.maxEthPerRun) {
         throw new Error(
@@ -435,7 +448,10 @@ function buildApi(state: RunningStrategy) {
             },
           });
         } catch (e) {
-          addLog(`Performance tracking: failed to persist DRY RUN buy: ${e instanceof Error ? e.message : String(e)}`, "error");
+          addLog(
+            `Performance tracking: failed to persist DRY RUN buy: ${e instanceof Error ? e.message : String(e)}`,
+            "error",
+          );
         }
 
         return { hash: SIMULATED_HASH, status: "simulated" };
@@ -527,197 +543,221 @@ function buildApi(state: RunningStrategy) {
         try {
           if (state.stopRequested) throw new Error("Strategy stopped");
 
-        if (minTokensOut > 0n) {
-          addLog(
-            `BUY (delegate) ${ethAmount} ETH on pair ${pairAddress.slice(0, 10)}… (minTokensOut=${minTokensOut.toString()})`,
-            "trade",
-          );
-        } else {
-          addLog(`BUY (delegate) ${ethAmount} ETH on pair ${pairAddress.slice(0, 10)}…`, "trade");
-        }
+          if (minTokensOut > 0n) {
+            addLog(
+              `BUY (delegate) ${ethAmount} ETH on pair ${pairAddress.slice(0, 10)}… (minTokensOut=${minTokensOut.toString()})`,
+              "trade",
+            );
+          } else {
+            addLog(`BUY (delegate) ${ethAmount} ETH on pair ${pairAddress.slice(0, 10)}…`, "trade");
+          }
 
-        let hash: `0x${string}` | null = null;
-        let attempts = 0;
-        let nonceRetries = 0;
-        while (true) {
-          if (state.stopRequested) throw new Error("Strategy stopped");
-          try {
-            const nonceRaw = await delegateConfig.publicClient.getTransactionCount({
-              address: delegateConfig.account.address,
-              blockTag: "pending",
-            });
-            const nonce = typeof nonceRaw === "bigint" ? Number(nonceRaw) : nonceRaw;
+          let hash: `0x${string}` | null = null;
+          let attempts = 0;
+          let nonceRetries = 0;
+          while (true) {
+            if (state.stopRequested) throw new Error("Strategy stopped");
+            try {
+              const nonceRaw = await delegateConfig.publicClient.getTransactionCount({
+                address: delegateConfig.account.address,
+                blockTag: "pending",
+              });
+              const nonce = typeof nonceRaw === "bigint" ? Number(nonceRaw) : nonceRaw;
 
-            hash = await delegateConfig.walletClient.writeContract({
-              address: delegateConfig.delegateAddress,
-              abi: tradDelegateAbi,
-              functionName: "executeBuy",
-              args: [getAddress(state.userAddress), getAddress(pair), ethWei, minTokensOut, deadline],
-              nonce,
-            });
-            break;
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            const isSlippageExceeded = msg.includes("SlippageExceeded") || msg.includes("0x8199f5f3");
-            if (!isSlippageExceeded) {
-              const isNonceIssue =
-                msg.includes("nonce too low") ||
-                msg.includes("Nonce provided for the transaction") ||
-                msg.includes("replacement transaction underpriced") ||
-                msg.includes("underpriced");
+              hash = await delegateConfig.walletClient.writeContract({
+                address: delegateConfig.delegateAddress,
+                abi: tradDelegateAbi,
+                functionName: "executeBuy",
+                args: [
+                  getAddress(state.userAddress),
+                  getAddress(pair),
+                  ethWei,
+                  minTokensOut,
+                  deadline,
+                ],
+                nonce,
+              });
+              break;
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : String(e);
+              const isSlippageExceeded =
+                msg.includes("SlippageExceeded") || msg.includes("0x8199f5f3");
+              if (!isSlippageExceeded) {
+                const isNonceIssue =
+                  msg.includes("nonce too low") ||
+                  msg.includes("Nonce provided for the transaction") ||
+                  msg.includes("replacement transaction underpriced") ||
+                  msg.includes("underpriced");
 
-              if (isNonceIssue) {
-                nonceRetries++;
-                if (nonceRetries >= 4) throw e;
-                addLog("BUY (delegate): nonce issue detected. Retrying with fresh pending nonce…", "info");
-                continue;
+                if (isNonceIssue) {
+                  nonceRetries++;
+                  if (nonceRetries >= 4) throw e;
+                  addLog(
+                    "BUY (delegate): nonce issue detected. Retrying with fresh pending nonce…",
+                    "info",
+                  );
+                  continue;
+                }
+
+                throw e;
+              }
+              if (minTokensOut === 0n) throw e;
+
+              attempts++;
+              if (attempts >= 5) {
+                addLog(
+                  "BUY (delegate): SlippageExceeded persists after relaxing minTokensOut; aborting trade.",
+                  "error",
+                );
+                throw e;
               }
 
-              throw e;
-            }
-            if (minTokensOut === 0n) throw e;
-
-            attempts++;
-            if (attempts >= 5) {
+              const nextMinTokensOut = minTokensOut / 2n;
               addLog(
-                "BUY (delegate): SlippageExceeded persists after relaxing minTokensOut; aborting trade.",
+                `BUY (delegate): SlippageExceeded with minTokensOut=${minTokensOut.toString()}. Retrying with minTokensOut=${nextMinTokensOut.toString()}…`,
+                "info",
+              );
+              minTokensOut = nextMinTokensOut;
+            }
+          }
+
+          if (hash === null) throw new Error("BUY (delegate): failed to send transaction");
+          const receipt = await delegateConfig.publicClient.waitForTransactionReceipt({ hash });
+          addLog(`BUY (delegate) confirmed: ${hash}`, "trade");
+
+          let tokenAddress: string | null = null;
+          const cachedToken = state.pairTokenCache.get(pair);
+          if (cachedToken !== undefined) tokenAddress = cachedToken;
+
+          let amountEth = 0;
+          let tokenAmount = 0;
+          let feeEth = 0;
+
+          if (receipt.status === "success") {
+            for (const log of receipt.logs) {
+              if (log.address.toLowerCase() !== delegateConfig.delegateAddress.toLowerCase())
+                continue;
+              try {
+                const decoded = decodeEventLog({
+                  abi: tradDelegateAbi,
+                  data: log.data,
+                  topics: log.topics,
+                });
+                if (decoded.eventName !== "BuyExecuted") continue;
+                if (
+                  decoded.args === undefined ||
+                  decoded.args === null ||
+                  typeof decoded.args !== "object"
+                )
+                  continue;
+
+                const args = decoded.args as Record<string, unknown>;
+                const ethSpentWei = args.ethSpent;
+                const tokensReceivedWei = args.tokensReceived;
+                const feeTakenWei = args.feeTaken;
+                const pairArg = args.pair;
+
+                if (typeof pairArg === "string") {
+                  try {
+                    pair = getAddress(pairArg);
+                  } catch {
+                    // ignore
+                  }
+                }
+                if (typeof ethSpentWei === "bigint") amountEth = Number(formatEther(ethSpentWei));
+                if (typeof tokensReceivedWei === "bigint")
+                  tokenAmount = Number(formatEther(tokensReceivedWei));
+                if (typeof feeTakenWei === "bigint") feeEth = Number(formatEther(feeTakenWei));
+                break;
+              } catch {
+                // ignore non-matching logs
+              }
+            }
+          }
+
+          const investedEth = Math.max(0, amountEth - feeEth);
+          const pnlEth = -feeEth;
+          const pnlPct = amountEth !== 0 ? (pnlEth / amountEth) * 100 : 0;
+
+          const idx = state.tradeIdx;
+          state.tradeIdx++;
+          state.cumulativePnlEth += pnlEth;
+
+          if (receipt.status === "success" && tokenAmount > 0) {
+            let pos = state.positions.get(pair);
+            if (pos === undefined) {
+              pos = { tokenHeld: 0, costBasisEth: 0, tokenAddress };
+              state.positions.set(pair, pos);
+            }
+            pos.tokenHeld += tokenAmount;
+            pos.costBasisEth += investedEth;
+            if (tokenAddress !== null) pos.tokenAddress = tokenAddress;
+
+            try {
+              await prisma.strategyPosition.upsert({
+                where: { runId_pairAddress: { runId: state.runId, pairAddress: pair } },
+                create: {
+                  runId: state.runId,
+                  pairAddress: pair,
+                  tokenAddress,
+                  tokenHeld: pos.tokenHeld,
+                  costBasisEth: pos.costBasisEth,
+                },
+                update: {
+                  tokenAddress,
+                  tokenHeld: pos.tokenHeld,
+                  costBasisEth: pos.costBasisEth,
+                },
+              });
+            } catch (e) {
+              addLog(
+                `Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`,
                 "error",
               );
-              throw e;
-            }
-
-            const nextMinTokensOut = minTokensOut / 2n;
-            addLog(
-              `BUY (delegate): SlippageExceeded with minTokensOut=${minTokensOut.toString()}. Retrying with minTokensOut=${nextMinTokensOut.toString()}…`,
-              "info",
-            );
-            minTokensOut = nextMinTokensOut;
-          }
-        }
-
-        if (hash === null) throw new Error("BUY (delegate): failed to send transaction");
-        const receipt = await delegateConfig.publicClient.waitForTransactionReceipt({ hash });
-        addLog(`BUY (delegate) confirmed: ${hash}`, "trade");
-
-        let tokenAddress: string | null = null;
-        const cachedToken = state.pairTokenCache.get(pair);
-        if (cachedToken !== undefined) tokenAddress = cachedToken;
-
-        let amountEth = 0;
-        let tokenAmount = 0;
-        let feeEth = 0;
-
-        if (receipt.status === "success") {
-          for (const log of receipt.logs) {
-            if (log.address.toLowerCase() !== delegateConfig.delegateAddress.toLowerCase()) continue;
-            try {
-              const decoded = decodeEventLog({
-                abi: tradDelegateAbi,
-                data: log.data,
-                topics: log.topics,
-              });
-              if (decoded.eventName !== "BuyExecuted") continue;
-              if (decoded.args === undefined || decoded.args === null || typeof decoded.args !== "object") continue;
-
-              const args = decoded.args as Record<string, unknown>;
-              const ethSpentWei = args.ethSpent;
-              const tokensReceivedWei = args.tokensReceived;
-              const feeTakenWei = args.feeTaken;
-              const pairArg = args.pair;
-
-              if (typeof pairArg === "string") {
-                try {
-                  pair = getAddress(pairArg);
-                } catch {
-                  // ignore
-                }
-              }
-              if (typeof ethSpentWei === "bigint") amountEth = Number(formatEther(ethSpentWei));
-              if (typeof tokensReceivedWei === "bigint") tokenAmount = Number(formatEther(tokensReceivedWei));
-              if (typeof feeTakenWei === "bigint") feeEth = Number(formatEther(feeTakenWei));
-              break;
-            } catch {
-              // ignore non-matching logs
             }
           }
-        }
-
-        const investedEth = Math.max(0, amountEth - feeEth);
-        const pnlEth = -feeEth;
-        const pnlPct = amountEth !== 0 ? (pnlEth / amountEth) * 100 : 0;
-
-        const idx = state.tradeIdx;
-        state.tradeIdx++;
-        state.cumulativePnlEth += pnlEth;
-
-        if (receipt.status === "success" && tokenAmount > 0) {
-          let pos = state.positions.get(pair);
-          if (pos === undefined) {
-            pos = { tokenHeld: 0, costBasisEth: 0, tokenAddress };
-            state.positions.set(pair, pos);
-          }
-          pos.tokenHeld += tokenAmount;
-          pos.costBasisEth += investedEth;
-          if (tokenAddress !== null) pos.tokenAddress = tokenAddress;
 
           try {
-            await prisma.strategyPosition.upsert({
-              where: { runId_pairAddress: { runId: state.runId, pairAddress: pair } },
-              create: {
+            await prisma.strategyTrade.create({
+              data: {
                 runId: state.runId,
+                timestamp: ts,
+                side: "buy",
                 pairAddress: pair,
                 tokenAddress,
-                tokenHeld: pos.tokenHeld,
-                costBasisEth: pos.costBasisEth,
-              },
-              update: {
-                tokenAddress,
-                tokenHeld: pos.tokenHeld,
-                costBasisEth: pos.costBasisEth,
+                txHash: hash,
+                status: receipt.status,
+                amountEth,
+                tokenAmount,
+                feeEth,
+                gasEth: 0,
+                pnlEth,
+                pnlPct,
+                cumulativePnlEth: state.cumulativePnlEth,
+                idx,
               },
             });
           } catch (e) {
-            addLog(`Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`, "error");
-          }
-        }
-
-        try {
-          await prisma.strategyTrade.create({
-            data: {
-              runId: state.runId,
-              timestamp: ts,
-              side: "buy",
-              pairAddress: pair,
-              tokenAddress,
-              txHash: hash,
-              status: receipt.status,
-              amountEth,
-              tokenAmount,
-              feeEth,
-              gasEth: 0,
-              pnlEth,
-              pnlPct,
-              cumulativePnlEth: state.cumulativePnlEth,
-              idx,
-            },
-          });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          if (msg.includes("Unique constraint failed") && msg.includes("runId") && msg.includes("idx")) {
-            try {
-              const last = await prisma.strategyTrade.findFirst({
-                where: { runId: state.runId },
-                orderBy: { idx: "desc" },
-              });
-              if (last !== null) state.tradeIdx = last.idx + 1;
-            } catch {
-              // ignore
+            const msg = e instanceof Error ? e.message : String(e);
+            if (
+              msg.includes("Unique constraint failed") &&
+              msg.includes("runId") &&
+              msg.includes("idx")
+            ) {
+              try {
+                const last = await prisma.strategyTrade.findFirst({
+                  where: { runId: state.runId },
+                  orderBy: { idx: "desc" },
+                });
+                if (last !== null) state.tradeIdx = last.idx + 1;
+              } catch {
+                // ignore
+              }
             }
+            addLog(`Performance tracking: failed to persist trade: ${msg}`, "error");
           }
-          addLog(`Performance tracking: failed to persist trade: ${msg}`, "error");
-        }
 
-        return { hash, status: receipt.status };
+          return { hash, status: receipt.status };
         } finally {
           releaseGate();
         }
@@ -790,7 +830,10 @@ function buildApi(state: RunningStrategy) {
             },
           });
         } catch (e) {
-          addLog(`Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`, "error");
+          addLog(
+            `Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`,
+            "error",
+          );
         }
       }
 
@@ -815,7 +858,10 @@ function buildApi(state: RunningStrategy) {
           },
         });
       } catch (e) {
-        addLog(`Performance tracking: failed to persist trade: ${e instanceof Error ? e.message : String(e)}`, "error");
+        addLog(
+          `Performance tracking: failed to persist trade: ${e instanceof Error ? e.message : String(e)}`,
+          "error",
+        );
       }
 
       return { hash: result.hash, status: result.receipt.status };
@@ -844,7 +890,10 @@ function buildApi(state: RunningStrategy) {
       }
 
       if (globalDryRun) {
-        addLog(`DRY RUN: Would sell ${tokenAmount} tokens on pair ${pairAddress.slice(0, 10)}…`, "trade");
+        addLog(
+          `DRY RUN: Would sell ${tokenAmount} tokens on pair ${pairAddress.slice(0, 10)}…`,
+          "trade",
+        );
 
         const idx = state.tradeIdx;
         state.tradeIdx++;
@@ -870,7 +919,10 @@ function buildApi(state: RunningStrategy) {
             },
           });
         } catch (e) {
-          addLog(`Performance tracking: failed to persist DRY RUN sell: ${e instanceof Error ? e.message : String(e)}`, "error");
+          addLog(
+            `Performance tracking: failed to persist DRY RUN sell: ${e instanceof Error ? e.message : String(e)}`,
+            "error",
+          );
         }
 
         return { hash: SIMULATED_HASH, status: "simulated" };
@@ -945,203 +997,234 @@ function buildApi(state: RunningStrategy) {
         try {
           if (state.stopRequested) throw new Error("Strategy stopped");
 
-        if (minEthOut > 0n) {
-          addLog(
-            `SELL (delegate) ${tokenAmount} tokens on pair ${pairAddress.slice(0, 10)}… (minEthOut=${minEthOut.toString()})`,
-            "trade",
-          );
-        } else {
-          addLog(`SELL (delegate) ${tokenAmount} tokens on pair ${pairAddress.slice(0, 10)}…`, "trade");
-        }
-
-        let hash: `0x${string}` | null = null;
-        let attempts = 0;
-        let nonceRetries = 0;
-        while (true) {
-          if (state.stopRequested) throw new Error("Strategy stopped");
-          try {
-            const nonceRaw = await delegateConfig.publicClient.getTransactionCount({
-              address: delegateConfig.account.address,
-              blockTag: "pending",
-            });
-            const nonce = typeof nonceRaw === "bigint" ? Number(nonceRaw) : nonceRaw;
-
-            hash = await delegateConfig.walletClient.writeContract({
-              address: delegateConfig.delegateAddress,
-              abi: tradDelegateAbi,
-              functionName: "executeSell",
-              args: [getAddress(state.userAddress), getAddress(pair), tokenWei, minEthOut, deadline],
-              nonce,
-            });
-            break;
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            const isSlippageExceeded = msg.includes("SlippageExceeded") || msg.includes("0x8199f5f3");
-            if (!isSlippageExceeded) {
-              const isNonceIssue =
-                msg.includes("nonce too low") ||
-                msg.includes("Nonce provided for the transaction") ||
-                msg.includes("replacement transaction underpriced") ||
-                msg.includes("underpriced");
-
-              if (isNonceIssue) {
-                nonceRetries++;
-                if (nonceRetries >= 4) throw e;
-                addLog("SELL (delegate): nonce issue detected. Retrying with fresh pending nonce…", "info");
-                continue;
-              }
-
-              throw e;
-            }
-            if (minEthOut === 0n) throw e;
-
-            attempts++;
-            if (attempts >= 5) {
-              addLog("SELL (delegate): SlippageExceeded persists after relaxing minEthOut; aborting trade.", "error");
-              throw e;
-            }
-
-            const nextMinEthOut = minEthOut / 2n;
+          if (minEthOut > 0n) {
             addLog(
-              `SELL (delegate): SlippageExceeded with minEthOut=${minEthOut.toString()}. Retrying with minEthOut=${nextMinEthOut.toString()}…`,
-              "info",
+              `SELL (delegate) ${tokenAmount} tokens on pair ${pairAddress.slice(0, 10)}… (minEthOut=${minEthOut.toString()})`,
+              "trade",
             );
-            minEthOut = nextMinEthOut;
+          } else {
+            addLog(
+              `SELL (delegate) ${tokenAmount} tokens on pair ${pairAddress.slice(0, 10)}…`,
+              "trade",
+            );
           }
-        }
 
-        if (hash === null) throw new Error("SELL (delegate): failed to send transaction");
-        const receipt = await delegateConfig.publicClient.waitForTransactionReceipt({ hash });
-        addLog(`SELL (delegate) confirmed: ${hash}`, "trade");
-
-        let tokensSold = 0;
-        let ethReceived = 0;
-        let feeEth = 0;
-
-        if (receipt.status === "success") {
-          for (const log of receipt.logs) {
-            if (log.address.toLowerCase() !== delegateConfig.delegateAddress.toLowerCase()) continue;
+          let hash: `0x${string}` | null = null;
+          let attempts = 0;
+          let nonceRetries = 0;
+          while (true) {
+            if (state.stopRequested) throw new Error("Strategy stopped");
             try {
-              const decoded = decodeEventLog({
-                abi: tradDelegateAbi,
-                data: log.data,
-                topics: log.topics,
+              const nonceRaw = await delegateConfig.publicClient.getTransactionCount({
+                address: delegateConfig.account.address,
+                blockTag: "pending",
               });
-              if (decoded.eventName !== "SellExecuted") continue;
-              if (decoded.args === undefined || decoded.args === null || typeof decoded.args !== "object") continue;
+              const nonce = typeof nonceRaw === "bigint" ? Number(nonceRaw) : nonceRaw;
 
-              const args = decoded.args as Record<string, unknown>;
-              const tokensSoldWei = args.tokensSold;
-              const ethReceivedWei = args.ethReceived;
-              const feeTakenWei = args.feeTaken;
-              const pairArg = args.pair;
+              hash = await delegateConfig.walletClient.writeContract({
+                address: delegateConfig.delegateAddress,
+                abi: tradDelegateAbi,
+                functionName: "executeSell",
+                args: [
+                  getAddress(state.userAddress),
+                  getAddress(pair),
+                  tokenWei,
+                  minEthOut,
+                  deadline,
+                ],
+                nonce,
+              });
+              break;
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : String(e);
+              const isSlippageExceeded =
+                msg.includes("SlippageExceeded") || msg.includes("0x8199f5f3");
+              if (!isSlippageExceeded) {
+                const isNonceIssue =
+                  msg.includes("nonce too low") ||
+                  msg.includes("Nonce provided for the transaction") ||
+                  msg.includes("replacement transaction underpriced") ||
+                  msg.includes("underpriced");
 
-              if (typeof pairArg === "string") {
-                try {
-                  pair = getAddress(pairArg);
-                } catch {
-                  // ignore
+                if (isNonceIssue) {
+                  nonceRetries++;
+                  if (nonceRetries >= 4) throw e;
+                  addLog(
+                    "SELL (delegate): nonce issue detected. Retrying with fresh pending nonce…",
+                    "info",
+                  );
+                  continue;
                 }
+
+                throw e;
+              }
+              if (minEthOut === 0n) throw e;
+
+              attempts++;
+              if (attempts >= 5) {
+                addLog(
+                  "SELL (delegate): SlippageExceeded persists after relaxing minEthOut; aborting trade.",
+                  "error",
+                );
+                throw e;
               }
 
-              if (typeof tokensSoldWei === "bigint") tokensSold = Number(formatEther(tokensSoldWei));
-              if (typeof ethReceivedWei === "bigint") ethReceived = Number(formatEther(ethReceivedWei));
-              if (typeof feeTakenWei === "bigint") feeEth = Number(formatEther(feeTakenWei));
-              break;
-            } catch {
-              // ignore
+              const nextMinEthOut = minEthOut / 2n;
+              addLog(
+                `SELL (delegate): SlippageExceeded with minEthOut=${minEthOut.toString()}. Retrying with minEthOut=${nextMinEthOut.toString()}…`,
+                "info",
+              );
+              minEthOut = nextMinEthOut;
             }
           }
-        }
 
-        const netProceeds = Math.max(0, ethReceived - feeEth);
+          if (hash === null) throw new Error("SELL (delegate): failed to send transaction");
+          const receipt = await delegateConfig.publicClient.waitForTransactionReceipt({ hash });
+          addLog(`SELL (delegate) confirmed: ${hash}`, "trade");
 
-        let pos = state.positions.get(pair);
-        if (pos === undefined) {
-          pos = { tokenHeld: 0, costBasisEth: 0, tokenAddress };
-          state.positions.set(pair, pos);
-        }
+          let tokensSold = 0;
+          let ethReceived = 0;
+          let feeEth = 0;
 
-        let costSold = 0;
-        if (pos.tokenHeld > 0 && tokensSold > 0) {
-          if (tokensSold >= pos.tokenHeld) {
-            costSold = pos.costBasisEth;
-          } else {
-            costSold = (pos.costBasisEth / pos.tokenHeld) * tokensSold;
+          if (receipt.status === "success") {
+            for (const log of receipt.logs) {
+              if (log.address.toLowerCase() !== delegateConfig.delegateAddress.toLowerCase())
+                continue;
+              try {
+                const decoded = decodeEventLog({
+                  abi: tradDelegateAbi,
+                  data: log.data,
+                  topics: log.topics,
+                });
+                if (decoded.eventName !== "SellExecuted") continue;
+                if (
+                  decoded.args === undefined ||
+                  decoded.args === null ||
+                  typeof decoded.args !== "object"
+                )
+                  continue;
+
+                const args = decoded.args as Record<string, unknown>;
+                const tokensSoldWei = args.tokensSold;
+                const ethReceivedWei = args.ethReceived;
+                const feeTakenWei = args.feeTaken;
+                const pairArg = args.pair;
+
+                if (typeof pairArg === "string") {
+                  try {
+                    pair = getAddress(pairArg);
+                  } catch {
+                    // ignore
+                  }
+                }
+
+                if (typeof tokensSoldWei === "bigint")
+                  tokensSold = Number(formatEther(tokensSoldWei));
+                if (typeof ethReceivedWei === "bigint")
+                  ethReceived = Number(formatEther(ethReceivedWei));
+                if (typeof feeTakenWei === "bigint") feeEth = Number(formatEther(feeTakenWei));
+                break;
+              } catch {
+                // ignore
+              }
+            }
           }
-        }
 
-        const pnlEth = receipt.status === "success" ? netProceeds - costSold : 0;
-        const amountEth = receipt.status === "success" ? ethReceived : 0;
-        const pnlPct = amountEth !== 0 ? (pnlEth / amountEth) * 100 : 0;
+          const netProceeds = Math.max(0, ethReceived - feeEth);
 
-        const idx = state.tradeIdx;
-        state.tradeIdx++;
-        state.cumulativePnlEth += pnlEth;
+          let pos = state.positions.get(pair);
+          if (pos === undefined) {
+            pos = { tokenHeld: 0, costBasisEth: 0, tokenAddress };
+            state.positions.set(pair, pos);
+          }
 
-        if (receipt.status === "success" && tokensSold > 0) {
-          pos.tokenHeld = Math.max(0, pos.tokenHeld - tokensSold);
-          pos.costBasisEth = Math.max(0, pos.costBasisEth - costSold);
-          pos.tokenAddress = tokenAddress;
+          let costSold = 0;
+          if (pos.tokenHeld > 0 && tokensSold > 0) {
+            if (tokensSold >= pos.tokenHeld) {
+              costSold = pos.costBasisEth;
+            } else {
+              costSold = (pos.costBasisEth / pos.tokenHeld) * tokensSold;
+            }
+          }
+
+          const pnlEth = receipt.status === "success" ? netProceeds - costSold : 0;
+          const amountEth = receipt.status === "success" ? ethReceived : 0;
+          const pnlPct = amountEth !== 0 ? (pnlEth / amountEth) * 100 : 0;
+
+          const idx = state.tradeIdx;
+          state.tradeIdx++;
+          state.cumulativePnlEth += pnlEth;
+
+          if (receipt.status === "success" && tokensSold > 0) {
+            pos.tokenHeld = Math.max(0, pos.tokenHeld - tokensSold);
+            pos.costBasisEth = Math.max(0, pos.costBasisEth - costSold);
+            pos.tokenAddress = tokenAddress;
+
+            try {
+              await prisma.strategyPosition.upsert({
+                where: { runId_pairAddress: { runId: state.runId, pairAddress: pair } },
+                create: {
+                  runId: state.runId,
+                  pairAddress: pair,
+                  tokenAddress,
+                  tokenHeld: pos.tokenHeld,
+                  costBasisEth: pos.costBasisEth,
+                },
+                update: {
+                  tokenAddress,
+                  tokenHeld: pos.tokenHeld,
+                  costBasisEth: pos.costBasisEth,
+                },
+              });
+            } catch (e) {
+              addLog(
+                `Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`,
+                "error",
+              );
+            }
+          }
 
           try {
-            await prisma.strategyPosition.upsert({
-              where: { runId_pairAddress: { runId: state.runId, pairAddress: pair } },
-              create: {
+            await prisma.strategyTrade.create({
+              data: {
                 runId: state.runId,
+                timestamp: ts,
+                side: "sell",
                 pairAddress: pair,
                 tokenAddress,
-                tokenHeld: pos.tokenHeld,
-                costBasisEth: pos.costBasisEth,
-              },
-              update: {
-                tokenAddress,
-                tokenHeld: pos.tokenHeld,
-                costBasisEth: pos.costBasisEth,
+                txHash: hash,
+                status: receipt.status,
+                amountEth,
+                tokenAmount: tokensSold,
+                feeEth,
+                gasEth: 0,
+                pnlEth,
+                pnlPct,
+                cumulativePnlEth: state.cumulativePnlEth,
+                idx,
               },
             });
           } catch (e) {
-            addLog(`Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`, "error");
-          }
-        }
-
-        try {
-          await prisma.strategyTrade.create({
-            data: {
-              runId: state.runId,
-              timestamp: ts,
-              side: "sell",
-              pairAddress: pair,
-              tokenAddress,
-              txHash: hash,
-              status: receipt.status,
-              amountEth,
-              tokenAmount: tokensSold,
-              feeEth,
-              gasEth: 0,
-              pnlEth,
-              pnlPct,
-              cumulativePnlEth: state.cumulativePnlEth,
-              idx,
-            },
-          });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          if (msg.includes("Unique constraint failed") && msg.includes("runId") && msg.includes("idx")) {
-            try {
-              const last = await prisma.strategyTrade.findFirst({
-                where: { runId: state.runId },
-                orderBy: { idx: "desc" },
-              });
-              if (last !== null) state.tradeIdx = last.idx + 1;
-            } catch {
-              // ignore
+            const msg = e instanceof Error ? e.message : String(e);
+            if (
+              msg.includes("Unique constraint failed") &&
+              msg.includes("runId") &&
+              msg.includes("idx")
+            ) {
+              try {
+                const last = await prisma.strategyTrade.findFirst({
+                  where: { runId: state.runId },
+                  orderBy: { idx: "desc" },
+                });
+                if (last !== null) state.tradeIdx = last.idx + 1;
+              } catch {
+                // ignore
+              }
             }
+            addLog(`Performance tracking: failed to persist trade: ${msg}`, "error");
           }
-          addLog(`Performance tracking: failed to persist trade: ${msg}`, "error");
-        }
 
-        return { hash, status: receipt.status };
+          return { hash, status: receipt.status };
         } finally {
           releaseGate();
         }
@@ -1163,7 +1246,12 @@ function buildApi(state: RunningStrategy) {
 
       const amount = parseEther(tokenAmount.toString());
       addLog(`SELL ${tokenAmount} tokens on pair ${pairAddress.slice(0, 10)}…`, "trade");
-      const result = await state.robinpump.sell(pair, tokenAddress, amount, risk.defaultSlippageBps / 10_000);
+      const result = await state.robinpump.sell(
+        pair,
+        tokenAddress,
+        amount,
+        risk.defaultSlippageBps / 10_000,
+      );
       addLog(`SELL confirmed: ${result.hash}`, "trade");
 
       let ethAfter = ethBefore;
@@ -1174,12 +1262,14 @@ function buildApi(state: RunningStrategy) {
       }
 
       let gasWei = 0n;
-      const sellReceiptGasPrice = (result.receipt as { effectiveGasPrice?: bigint }).effectiveGasPrice ?? null;
+      const sellReceiptGasPrice =
+        (result.receipt as { effectiveGasPrice?: bigint }).effectiveGasPrice ?? null;
       if (sellReceiptGasPrice !== null) {
         gasWei += result.receipt.gasUsed * sellReceiptGasPrice;
       }
       if (result.approval !== undefined) {
-        const approvalGasPrice = (result.approval.receipt as { effectiveGasPrice?: bigint }).effectiveGasPrice ?? null;
+        const approvalGasPrice =
+          (result.approval.receipt as { effectiveGasPrice?: bigint }).effectiveGasPrice ?? null;
         if (approvalGasPrice !== null) {
           gasWei += result.approval.receipt.gasUsed * approvalGasPrice;
         }
@@ -1188,8 +1278,12 @@ function buildApi(state: RunningStrategy) {
       const gasEth = Number(formatEther(gasWei));
       const netDeltaWei = ethAfter - ethBefore;
       const grossProceedsWei = netDeltaWei + gasWei;
-      const amountEth = result.receipt.status === "success" && grossProceedsWei > 0n ? Number(formatEther(grossProceedsWei)) : 0;
-      const netProceedsEth = result.receipt.status === "success" ? Number(formatEther(netDeltaWei)) : 0;
+      const amountEth =
+        result.receipt.status === "success" && grossProceedsWei > 0n
+          ? Number(formatEther(grossProceedsWei))
+          : 0;
+      const netProceedsEth =
+        result.receipt.status === "success" ? Number(formatEther(netDeltaWei)) : 0;
 
       let pos = state.positions.get(pair);
       if (pos === undefined) {
@@ -1235,7 +1329,10 @@ function buildApi(state: RunningStrategy) {
             },
           });
         } catch (e) {
-          addLog(`Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`, "error");
+          addLog(
+            `Performance tracking: failed to persist position: ${e instanceof Error ? e.message : String(e)}`,
+            "error",
+          );
         }
       }
 
@@ -1260,7 +1357,10 @@ function buildApi(state: RunningStrategy) {
           },
         });
       } catch (e) {
-        addLog(`Performance tracking: failed to persist trade: ${e instanceof Error ? e.message : String(e)}`, "error");
+        addLog(
+          `Performance tracking: failed to persist trade: ${e instanceof Error ? e.message : String(e)}`,
+          "error",
+        );
       }
 
       return { hash: result.hash, status: result.receipt.status };
@@ -1331,7 +1431,6 @@ function buildApi(state: RunningStrategy) {
     async getEthUsdPrice() {
       return RobinPump.getEthUsdPrice();
     },
-
   };
 
   // ── main api object ────────────────────────────────────────────
@@ -1346,7 +1445,9 @@ function buildApi(state: RunningStrategy) {
       throw new Error("Unsupported: use api.robinpump.getPrice(pairAddress)");
     },
     async getBalance() {
-      throw new Error("Unsupported: use api.robinpump.getEthBalance() or api.robinpump.getBalance(tokenAddress)");
+      throw new Error(
+        "Unsupported: use api.robinpump.getEthBalance() or api.robinpump.getBalance(tokenAddress)",
+      );
     },
     async buy() {
       throw new Error("Unsupported: use api.robinpump.buy(pairAddress, ethAmount)");
@@ -1493,7 +1594,11 @@ function buildApi(state: RunningStrategy) {
     },
   };
 
-  return { api, getNextSchedule: () => (nextScheduleLabel !== null ? { ms: nextScheduleMs, label: nextScheduleLabel } : null) };
+  return {
+    api,
+    getNextSchedule: () =>
+      nextScheduleLabel !== null ? { ms: nextScheduleMs, label: nextScheduleLabel } : null,
+  };
 }
 
 // ─── Execute a single run of a strategy ──────────────────────────────
@@ -1504,7 +1609,11 @@ async function executeRun(strategyId: string) {
 
   const strategy = await prisma.strategy.findUnique({ where: { id: strategyId } });
   if (strategy === null || strategy.code === null) {
-    state.logs.push({ timestamp: Date.now(), message: "Strategy or code not found", level: "error" });
+    state.logs.push({
+      timestamp: Date.now(),
+      message: "Strategy or code not found",
+      level: "error",
+    });
     return;
   }
 
@@ -1566,7 +1675,11 @@ async function executeRun(strategyId: string) {
     if (rawSavedParams !== null) {
       for (const [key, val] of Object.entries(rawSavedParams)) {
         let extracted: unknown = val;
-        if (val !== null && typeof val === "object" && "value" in (val as Record<string, unknown>)) {
+        if (
+          val !== null &&
+          typeof val === "object" &&
+          "value" in (val as Record<string, unknown>)
+        ) {
           extracted = (val as Record<string, unknown>).value;
         }
         if (extracted === undefined || extracted === null) continue;
@@ -1773,10 +1886,12 @@ async function executeRun(strategyId: string) {
     }
 
     if (changed && paramDefs.length > 0) {
-      await prisma.strategy.update({
-        where: { id: strategyId },
-        data: { parameters: JSON.stringify(cleaned) },
-      }).catch(() => {});
+      await prisma.strategy
+        .update({
+          where: { id: strategyId },
+          data: { parameters: JSON.stringify(cleaned) },
+        })
+        .catch(() => {});
 
       if (extraKeys.length > 0 || fixedKeys.length > 0) {
         const extraLabel = extraKeys.length > 0 ? extraKeys.join(", ") : "(none)";
@@ -1804,10 +1919,12 @@ async function executeRun(strategyId: string) {
         message: `Unsafe strategy rejected: ${validationErr}`,
         level: "error",
       });
-      await prisma.strategy.update({
-        where: { id: strategyId },
-        data: { status: "error" },
-      }).catch(() => {});
+      await prisma.strategy
+        .update({
+          where: { id: strategyId },
+          data: { status: "error" },
+        })
+        .catch(() => {});
       return;
     }
 
@@ -1816,8 +1933,14 @@ async function executeRun(strategyId: string) {
       code = tsTranspiler.transformSync(code);
     } catch (transpileErr) {
       const msg = transpileErr instanceof Error ? transpileErr.message : String(transpileErr);
-      state.logs.push({ timestamp: Date.now(), message: `TypeScript transpile error: ${msg}`, level: "error" });
-      await prisma.strategy.update({ where: { id: strategyId }, data: { status: "error" } }).catch(() => {});
+      state.logs.push({
+        timestamp: Date.now(),
+        message: `TypeScript transpile error: ${msg}`,
+        level: "error",
+      });
+      await prisma.strategy
+        .update({ where: { id: strategyId }, data: { status: "error" } })
+        .catch(() => {});
       return;
     }
 
@@ -1843,7 +1966,11 @@ async function executeRun(strategyId: string) {
     const next = getNextSchedule();
     if (next !== null && running.has(strategyId)) {
       if (next.ms === null) {
-        state.logs.push({ timestamp: Date.now(), message: "Run complete (one-shot)", level: "info" });
+        state.logs.push({
+          timestamp: Date.now(),
+          message: "Run complete (one-shot)",
+          level: "info",
+        });
       } else {
         const ms = next.ms;
         state.logs.push({
@@ -1855,7 +1982,11 @@ async function executeRun(strategyId: string) {
       }
     } else {
       // Strategy didn't call scheduleNext — mark as complete
-      state.logs.push({ timestamp: Date.now(), message: "Run complete (no reschedule)", level: "info" });
+      state.logs.push({
+        timestamp: Date.now(),
+        message: "Run complete (no reschedule)",
+        level: "info",
+      });
     }
   } catch (e) {
     if (state.stopRequested) return;
@@ -1864,10 +1995,12 @@ async function executeRun(strategyId: string) {
     console.error(`[${strategyId}] Runtime error:`, e);
 
     // Mark strategy as errored
-    await prisma.strategy.update({
-      where: { id: strategyId },
-      data: { status: "error" },
-    }).catch(() => {});
+    await prisma.strategy
+      .update({
+        where: { id: strategyId },
+        data: { status: "error" },
+      })
+      .catch(() => {});
   }
 }
 
@@ -1916,7 +2049,9 @@ async function startStrategy(strategyId: string) {
     }
     // Wallet address set but no delegate configured — cannot trade server-side.
     else if (delegateConfig === null && userAddr !== null) {
-      throw new Error("TradDelegate contract not configured. Set TRAD_DELEGATE_ADDRESS and OPERATOR_PRIVATE_KEY in .env");
+      throw new Error(
+        "TradDelegate contract not configured. Set TRAD_DELEGATE_ADDRESS and OPERATOR_PRIVATE_KEY in .env",
+      );
     }
   }
 
@@ -2092,10 +2227,12 @@ async function stopStrategy(strategyId: string) {
     data: { status: "paused" },
   });
 
-  await prisma.strategyRun.update({
-    where: { id: state.runId },
-    data: { stoppedAt: new Date() },
-  }).catch(() => {});
+  await prisma.strategyRun
+    .update({
+      where: { id: state.runId },
+      data: { stoppedAt: new Date() },
+    })
+    .catch(() => {});
 
   console.log(`⏹ Strategy ${strategyId} stopped`);
 }

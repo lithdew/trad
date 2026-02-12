@@ -85,7 +85,7 @@ async function handleCoins(subArgs: string[]) {
     strict: false,
   });
 
-  const sort = values.sort === "marketCap" ? "marketCap" as const : "newest" as const;
+  const sort = values.sort === "marketCap" ? ("marketCap" as const) : ("newest" as const);
   const limit = Math.min(parseInt(String(values.limit ?? "50"), 10) || 50, 200);
   const offset = parseInt(String(values.offset ?? "0"), 10) || 0;
 
@@ -121,7 +121,11 @@ async function handleCoins(subArgs: string[]) {
 async function handleCoin(subArgs: string[]) {
   const pairAddress = subArgs[0];
   if (pairAddress === undefined || pairAddress === "") {
-    return { stdout: "", stderr: "Error: pair address required\nUsage: robinpump coin <pairAddress>\n", exitCode: 1 };
+    return {
+      stdout: "",
+      stderr: "Error: pair address required\nUsage: robinpump coin <pairAddress>\n",
+      exitCode: 1,
+    };
   }
 
   const [coin, ethUsdPrice] = await Promise.all([
@@ -161,7 +165,11 @@ async function handleCoin(subArgs: string[]) {
 async function handleTrades(subArgs: string[]) {
   const pairAddress = subArgs[0];
   if (pairAddress === undefined || pairAddress === "") {
-    return { stdout: "", stderr: "Error: pair address required\nUsage: robinpump trades <pairAddress> [--limit N]\n", exitCode: 1 };
+    return {
+      stdout: "",
+      stderr: "Error: pair address required\nUsage: robinpump trades <pairAddress> [--limit N]\n",
+      exitCode: 1,
+    };
   }
 
   const tradeArgs = subArgs.slice(1);
@@ -191,7 +199,8 @@ async function handleTrades(subArgs: string[]) {
   }
 
   return {
-    stdout: JSON.stringify({ pair: pairAddress, count: result.length, trades: result }, null, 2) + "\n",
+    stdout:
+      JSON.stringify({ pair: pairAddress, count: result.length, trades: result }, null, 2) + "\n",
     stderr: "",
     exitCode: 0,
   };
@@ -200,7 +209,11 @@ async function handleTrades(subArgs: string[]) {
 async function handleMetadata(subArgs: string[]) {
   const pairAddress = subArgs[0];
   if (pairAddress === undefined || pairAddress === "") {
-    return { stdout: "", stderr: "Error: pair address required\nUsage: robinpump metadata <pairAddress>\n", exitCode: 1 };
+    return {
+      stdout: "",
+      stderr: "Error: pair address required\nUsage: robinpump metadata <pairAddress>\n",
+      exitCode: 1,
+    };
   }
 
   const coin = await RobinPump.fetchCoin(pairAddress);
@@ -210,20 +223,29 @@ async function handleMetadata(subArgs: string[]) {
 
   const meta = await RobinPump.fetchMetadata(coin.uri);
   if (meta === null) {
-    return { stdout: "", stderr: `Error: metadata not available for ${coin.symbol} (${coin.uri})\n`, exitCode: 1 };
+    return {
+      stdout: "",
+      stderr: `Error: metadata not available for ${coin.symbol} (${coin.uri})\n`,
+      exitCode: 1,
+    };
   }
 
   const imageUrl = meta.image !== "" ? RobinPump.resolveImageUrl(meta.image) : null;
 
   return {
-    stdout: JSON.stringify({
-      pair: coin.pairAddress,
-      name: meta.name,
-      symbol: meta.symbol,
-      description: meta.description,
-      image: imageUrl,
-      createdOn: meta.createdOn,
-    }, null, 2) + "\n",
+    stdout:
+      JSON.stringify(
+        {
+          pair: coin.pairAddress,
+          name: meta.name,
+          symbol: meta.symbol,
+          description: meta.description,
+          image: imageUrl,
+          createdOn: meta.createdOn,
+        },
+        null,
+        2,
+      ) + "\n",
     stderr: "",
     exitCode: 0,
   };
@@ -232,7 +254,11 @@ async function handleMetadata(subArgs: string[]) {
 async function handleSearch(subArgs: string[]) {
   const query = subArgs.join(" ").toLowerCase().trim();
   if (query === "") {
-    return { stdout: "", stderr: "Error: search query required\nUsage: robinpump search <query>\n", exitCode: 1 };
+    return {
+      stdout: "",
+      stderr: "Error: search query required\nUsage: robinpump search <query>\n",
+      exitCode: 1,
+    };
   }
 
   const [coins, ethUsdPrice] = await Promise.all([
@@ -261,7 +287,8 @@ async function handleSearch(subArgs: string[]) {
   }
 
   return {
-    stdout: JSON.stringify({ query, ethUsdPrice, count: matches.length, coins: matches }, null, 2) + "\n",
+    stdout:
+      JSON.stringify({ query, ethUsdPrice, count: matches.length, coins: matches }, null, 2) + "\n",
     stderr: "",
     exitCode: 0,
   };
@@ -270,7 +297,8 @@ async function handleSearch(subArgs: string[]) {
 async function handleEthPrice() {
   const price = await RobinPump.getEthUsdPrice();
   return {
-    stdout: JSON.stringify({ ethUsdPrice: price, timestamp: new Date().toISOString() }, null, 2) + "\n",
+    stdout:
+      JSON.stringify({ ethUsdPrice: price, timestamp: new Date().toISOString() }, null, 2) + "\n",
     stderr: "",
     exitCode: 0,
   };

@@ -3,6 +3,7 @@
 Use this as your “submission control center”. Everything that isn’t a direct Google Form field lives here.
 
 **Public repo safety**
+
 - Don’t commit: private keys, admin tokens, emails, WiFi passwords, or any sensitive URLs.
 - Keep `.env` files untracked (already gitignored).
 
@@ -27,6 +28,7 @@ Use this as your “submission control center”. Everything that isn’t a dire
 ## What track are you submitting for?
 
 This project cleanly fits the **DeFi application on RobinPump** prompt:
+
 - “Build a DeFi application that makes trading more efficient on RobinPump.fun… smart contract dApp or trading bot… enhanced liquidity / helps traders make more money.”
 
 If you also want to compete in **Trading Track (Volume / PnL)**, plan to run a real bot with tiny capital (see “Live trading plan”).
@@ -40,6 +42,7 @@ If you also want to compete in **Trading Track (Volume / PnL)**, plan to run a r
 `TODO`
 
 Checklist:
+
 - App loads without needing secrets
 - Strategy Builder can generate code + dashboard
 - Deploy/Stop works in dry-run mode
@@ -52,6 +55,7 @@ Checklist:
 `TODO: Upload link (YouTube / Loom)`
 
 Suggested shot list (2–4 minutes):
+
 - 10s: “trad = Cursor for trading bots on RobinPump”
 - 30s: Create a strategy in Strategy Builder (plain English prompt)
 - 30s: Show generated **code** + **WHEN/IF/THEN** dashboard
@@ -81,6 +85,7 @@ Add a section to `README.md` (or create `README_SUBMISSION.md` and link it) with
 ### 4) Screenshots (for README + slides)
 
 Create `TODO/screenshots/` locally (don’t commit if you don’t want). Capture:
+
 - Home/Dashboard
 - Strategy Builder (before + after generation)
 - Generated flow dashboard close-up
@@ -95,22 +100,22 @@ Create `TODO/screenshots/` locally (don’t commit if you don’t want). Capture
 
 Slide outline (fits their required structure):
 
-1. **Team**  
+1. **Team**
    - Names + 1-liner bios
 
-2. **Problem (30s)**  
+2. **Problem (30s)**
    - “Most ‘bot platforms’ are template-locked (grid bots, presets) and fee-heavy. Non-technical users can’t automate the strategies they actually want.”
 
-3. **Solution (30s)**  
+3. **Solution (30s)**
    - “Plain English → arbitrary strategy code + visual WHEN/IF/THEN dashboard → deployable bot (safe on-chain execution)”
 
-4. **Demo (30s)**  
+4. **Demo (30s)**
    - 3-step demo gif/flow (Prompt → UI+Code → Deploy logs)
 
-5. **How we used blockchain (30s)**  
+5. **How we used blockchain (30s)**
    - Base, on-chain pair contracts, tx receipts, optional delegation contract
 
-6. **Roadmap / vision (30s)**  
+6. **Roadmap / vision (30s)**
    - Safer sandboxing, strategy marketplace, richer analytics, more venues (optional)
 
 ---
@@ -120,6 +125,7 @@ Slide outline (fits their required structure):
 Post from a team member account, tag `@EasyA_App`.
 
 Template:
+
 > We built **trad**: Cursor for trading bots on **RobinPump.fun (Base)**.  
 > Describe any strategy in English → get real code + a live WHEN/IF/THEN dashboard → deploy. No template lock-in, no subscription bot fees.  
 > Demo: `TODO`  
@@ -132,9 +138,10 @@ Paste link into `SUBMISSION.md`.
 ### 7) LinkedIn post (required)
 
 Template:
+
 > Shipped **trad** at EasyA x Consensus HK: a natural-language trading bot builder for RobinPump on Base.  
 > Highlights: arbitrary strategy generation (not template-locked), auto dashboards, and safe delegated execution.  
-> Demo: `TODO`  Repo: `TODO`
+> Demo: `TODO` Repo: `TODO`
 
 Paste link into `SUBMISSION.md`.
 
@@ -181,4 +188,3 @@ If you need real trades counted on `robinpump.fun`:
 - [ ] LinkedIn post posted + link copied
 - [ ] `SUBMISSION.md` filled
 - [ ] No secrets committed
-

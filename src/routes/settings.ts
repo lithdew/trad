@@ -43,7 +43,8 @@ export const settingsRoutes = {
             exchange: s.exchange,
             apiKey: maskSecret(s.apiKey),
             apiSecret: apiSecretOut,
-            walletAddress: s.walletAddress !== null && s.walletAddress !== "" ? s.walletAddress : null,
+            walletAddress:
+              s.walletAddress !== null && s.walletAddress !== "" ? s.walletAddress : null,
             connected,
             updatedAt: s.updatedAt,
           });

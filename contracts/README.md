@@ -39,7 +39,7 @@ Only the contract owner can set or change the operator address.
 TradDelegate **does not allow the operator to call arbitrary contracts**. Trading is restricted by an **owner-managed allowlist**:
 
 - `allowedPairs[pair] = true` (explicitly allow a specific pair address), OR
-- `allowedPairCodehashes[codehash] = true` (allow *all* pairs that share the same runtime bytecode hash)
+- `allowedPairCodehashes[codehash] = true` (allow _all_ pairs that share the same runtime bytecode hash)
 
 For production, you almost always want the **codehash allowlist**, so the operator can trade across all RobinPump pair instances without per-pair updates.
 
@@ -47,8 +47,8 @@ For production, you almost always want the **codehash allowlist**, so the operat
 
 A platform fee (in basis points) is deducted from every trade:
 
-- **Buy**: fee is deducted from the ETH amount *before* buying tokens
-- **Sell**: fee is deducted from the ETH proceeds *after* selling tokens
+- **Buy**: fee is deducted from the ETH amount _before_ buying tokens
+- **Sell**: fee is deducted from the ETH proceeds _after_ selling tokens
 - Fees are sent to a configurable `feeReceiver` address
 
 ## Compile

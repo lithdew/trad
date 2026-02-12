@@ -31,17 +31,29 @@ export function Layout({ children, activePage }: LayoutProps) {
           <LayoutDashboard className="size-5" />
         </NavBtn>
 
-        <NavBtn active={activePage === "builder"} onClick={() => navigate("/strategy")} tip="New Strategy">
+        <NavBtn
+          active={activePage === "builder"}
+          onClick={() => navigate("/strategy")}
+          tip="New Strategy"
+        >
           <Plus className="size-5" />
         </NavBtn>
 
-        <NavBtn active={activePage === "marketplace"} onClick={() => navigate("/marketplace")} tip="Strategy Store">
+        <NavBtn
+          active={activePage === "marketplace"}
+          onClick={() => navigate("/marketplace")}
+          tip="Strategy Store"
+        >
           <ShoppingBag className="size-5" />
         </NavBtn>
 
         <div className="flex-1" />
 
-        <NavBtn active={activePage === "settings"} onClick={() => navigate("/settings")} tip="Settings">
+        <NavBtn
+          active={activePage === "settings"}
+          onClick={() => navigate("/settings")}
+          tip="Settings"
+        >
           <Settings className="size-5" />
         </NavBtn>
       </nav>

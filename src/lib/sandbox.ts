@@ -16,10 +16,7 @@ import { robinpumpCommand } from "./robinpump-cli";
 import { tradCommand } from "./trad-cli";
 
 // Load api.d.ts once at module scope — the type definitions that go into every sandbox
-const API_TYPES = readFileSync(
-  resolve(import.meta.dir, "api-types.d.ts"),
-  "utf-8",
-);
+const API_TYPES = readFileSync(resolve(import.meta.dir, "api-types.d.ts"), "utf-8");
 
 const DEFAULT_STRATEGY = [
   "// Strategy: Untitled",
@@ -50,9 +47,7 @@ const TSCONFIG = JSON.stringify(
 // Custom lint command — uses Bun's transpiler to catch syntax errors
 const lintCommand = defineCommand("lint", async (args, ctx) => {
   const filePath = args[0] ?? "main.ts";
-  const fullPath = filePath.startsWith("/")
-    ? filePath
-    : resolve(ctx.cwd, filePath);
+  const fullPath = filePath.startsWith("/") ? filePath : resolve(ctx.cwd, filePath);
   try {
     const content = await ctx.fs.readFile(fullPath, "utf-8");
     const transpiler = new Bun.Transpiler({ loader: "ts" });
@@ -100,9 +95,7 @@ export async function createStrategySandbox(existingCode?: string) {
     },
     network: {
       // Allow curl for external price APIs the AI may want to query
-      allowedUrlPrefixes: [
-        "https://api.coinbase.com/",
-      ],
+      allowedUrlPrefixes: ["https://api.coinbase.com/"],
       allowedMethods: ["GET", "HEAD"],
       timeoutMs: 10_000,
       maxRedirects: 5,
@@ -111,9 +104,7 @@ export async function createStrategySandbox(existingCode?: string) {
   });
 
   const mainTs =
-    existingCode !== undefined && existingCode !== ""
-      ? existingCode
-      : DEFAULT_STRATEGY;
+    existingCode !== undefined && existingCode !== "" ? existingCode : DEFAULT_STRATEGY;
 
   const { tools, sandbox } = await createBashTool({
     sandbox: bash,

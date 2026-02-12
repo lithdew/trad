@@ -1,33 +1,54 @@
-import {
-  useState, useRef, useEffect, useCallback, useMemo,
-  type KeyboardEvent,
-} from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import {
-  Renderer, StateProvider, ActionProvider, VisibilityProvider, useUIStream,
+  Renderer,
+  StateProvider,
+  ActionProvider,
+  VisibilityProvider,
+  useUIStream,
 } from "@json-render/react";
 import { Streamdown } from "streamdown";
 import { createCodePlugin } from "@streamdown/code";
 import "streamdown/styles.css";
 import {
-  Play, Square, Trash2, ChevronDown, Loader2,
-  Terminal, RotateCw, ArrowDown, BarChart3,
+  Play,
+  Square,
+  Trash2,
+  ChevronDown,
+  Loader2,
+  Terminal,
+  RotateCw,
+  ArrowDown,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "../../App";
 import { registry } from "../../lib/registry";
 import {
-  useStrategy, useStrategyLogs, createStrategy, updateStrategy, deleteStrategy,
-  deployStrategy, stopStrategy, queryClient, queryKeys,
+  useStrategy,
+  useStrategyLogs,
+  createStrategy,
+  updateStrategy,
+  deleteStrategy,
+  deployStrategy,
+  stopStrategy,
+  queryClient,
+  queryKeys,
   type StrategyPayload,
 } from "../../lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ChatBubble } from "./ChatBubble";
 import { EmptyPreview } from "./EmptyPreview";
@@ -43,18 +64,39 @@ const WELCOME_MESSAGES: UIMessage[] = [
   {
     id: "welcome",
     role: "assistant",
-    parts: [{
-      type: "text",
-      text: 'Hey! Describe your trading strategy for **RobinPump.fun** in plain English and I\'ll build it for you.\n\nTry something like **"Snipe new coins under $3k market cap"** or **"Market make on a coin to generate volume"**.\n\nI\'ll generate the code, and you\'ll see a live dashboard on the right with knobs you can tweak.\n\nSafety note: the runtime enforces strict risk limits (ETH per trade/run/day + max trades per run), and production defaults to **dry-run** unless live trading is explicitly enabled.',
-    }],
+    parts: [
+      {
+        type: "text",
+        text: 'Hey! Describe your trading strategy for **RobinPump.fun** in plain English and I\'ll build it for you.\n\nTry something like **"Snipe new coins under $3k market cap"** or **"Market make on a coin to generate volume"**.\n\nI\'ll generate the code, and you\'ll see a live dashboard on the right with knobs you can tweak.\n\nSafety note: the runtime enforces strict risk limits (ETH per trade/run/day + max trades per run), and production defaults to **dry-run** unless live trading is explicitly enabled.',
+      },
+    ],
   },
 ];
 
 const TEMPLATES = [
-  { name: "Volume Bot", prompt: "Create a volume-generating bot that buys and sells the same coin in small amounts every minute to maximize trading volume", icon: "⚡" },
-  { name: "Coin Sniper", prompt: "Snipe new coins launched on RobinPump under $3k market cap, buy 0.001 ETH worth of each", icon: "🎯" },
-  { name: "DCA Bot", prompt: "Dollar-cost average into a coin with 0.001 ETH every 5 minutes", icon: "📊" },
-  { name: "Market Maker", prompt: "Market make on a specific coin — buy low, sell high with tight spreads to generate volume", icon: "💰" },
+  {
+    name: "Volume Bot",
+    prompt:
+      "Create a volume-generating bot that buys and sells the same coin in small amounts every minute to maximize trading volume",
+    icon: "⚡",
+  },
+  {
+    name: "Coin Sniper",
+    prompt:
+      "Snipe new coins launched on RobinPump under $3k market cap, buy 0.001 ETH worth of each",
+    icon: "🎯",
+  },
+  {
+    name: "DCA Bot",
+    prompt: "Dollar-cost average into a coin with 0.001 ETH every 5 minutes",
+    icon: "📊",
+  },
+  {
+    name: "Market Maker",
+    prompt:
+      "Market make on a specific coin — buy low, sell high with tight spreads to generate volume",
+    icon: "💰",
+  },
 ];
 
 const sdCodePlugin = createCodePlugin({
@@ -73,7 +115,13 @@ function parseStrategyMeta(code: string) {
   const name = code.match(/\/\/ Strategy: (.+)/)?.[1] ?? "Untitled";
   const exchange = code.match(/\/\/ Exchange: (.+)/)?.[1]?.trim() ?? "robinpump";
   const description = code.match(/\/\/ Description: (.+)/)?.[1] ?? "";
-  const params: { key: string; type: string; defaultVal: string; desc: string; options?: string[] }[] = [];
+  const params: {
+    key: string;
+    type: string;
+    defaultVal: string;
+    desc: string;
+    options?: string[];
+  }[] = [];
   for (const m of code.matchAll(/\/\/ @param (\S+) (\S+) (\S+) (.+)/g)) {
     const key = m[1]!;
     const type = m[2]!;
@@ -97,7 +145,9 @@ function parseStrategyMeta(code: string) {
   return { name, exchange, description, params };
 }
 
-function buildParamState(params: { key: string; type: string; defaultVal: string; options?: string[] }[]) {
+function buildParamState(
+  params: { key: string; type: string; defaultVal: string; options?: string[] }[],
+) {
   const state: Record<string, unknown> = {};
   for (const p of params) {
     const t = p.type;
@@ -351,7 +401,10 @@ export function StrategyBuilder({ strategyId }: { strategyId?: string }) {
 
 /* ── Inner component — useChat called with correct initial messages ── */
 
-function StrategyBuilderInner({ strategyId, initialData }: {
+function StrategyBuilderInner({
+  strategyId,
+  initialData,
+}: {
   strategyId?: string;
   initialData?: ReturnType<typeof useStrategy>["data"];
 }) {
@@ -387,9 +440,11 @@ function StrategyBuilderInner({ strategyId, initialData }: {
     return "visual";
   });
 
-
-
-  const { spec, isStreaming: isUIStreaming, send: sendToGenerate } = useUIStream({
+  const {
+    spec,
+    isStreaming: isUIStreaming,
+    send: sendToGenerate,
+  } = useUIStream({
     api: "/api/generate",
     onError: (err) => {
       console.error("UI gen error:", err);
@@ -399,8 +454,16 @@ function StrategyBuilderInner({ strategyId, initialData }: {
 
   /* Saved spec — restored from DB on load; used until a fresh spec is streamed */
   const [savedSpec, setSavedSpec] = useState<typeof spec>(() => {
-    if (initialData?.config !== null && initialData?.config !== undefined && initialData.config !== "") {
-      try { return JSON.parse(initialData.config); } catch { return null; }
+    if (
+      initialData?.config !== null &&
+      initialData?.config !== undefined &&
+      initialData.config !== ""
+    ) {
+      try {
+        return JSON.parse(initialData.config);
+      } catch {
+        return null;
+      }
     }
     return null;
   });
@@ -418,10 +481,7 @@ function StrategyBuilderInner({ strategyId, initialData }: {
   const paramAutoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoSaveErrorAtRef = useRef(0);
 
-  const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat" }),
-    [],
-  );
+  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
 
   // Compute initial messages — use saved history if available, otherwise welcome
   const initialMessages = useMemo((): UIMessage[] => {
@@ -429,7 +489,9 @@ function StrategyBuilderInner({ strategyId, initialData }: {
       try {
         const parsed = JSON.parse(initialData.chatHistory) as UIMessage[];
         if (parsed.length > 0) return parsed;
-      } catch { /* fallback */ }
+      } catch {
+        /* fallback */
+      }
     }
     return WELCOME_MESSAGES;
   }, []);
@@ -526,7 +588,11 @@ ${code.slice(0, 800)}`;
     setStrategyCode(recovered);
     strategyCodeRef.current = recovered;
 
-    updateStrategy(savedId, { ...buildPayload(), code: recovered || null, status: strategyStatus }).catch(() => {});
+    updateStrategy(savedId, {
+      ...buildPayload(),
+      code: recovered || null,
+      status: strategyStatus,
+    }).catch(() => {});
   }, [savedId, initialData?.chatHistory, initialData?.code, strategyStatus]);
 
   // One-time repair on load: if stored parameters drifted from the code's @param list,
@@ -568,7 +634,11 @@ ${code.slice(0, 800)}`;
     repairedParamsFromCodeRef.current = true;
     setStrategyParams(cleaned);
     setParamsVersion((v) => v + 1);
-    updateStrategy(savedId, { ...buildPayload(), parameters: JSON.stringify(cleaned), status: strategyStatus }).catch(() => {});
+    updateStrategy(savedId, {
+      ...buildPayload(),
+      parameters: JSON.stringify(cleaned),
+      status: strategyStatus,
+    }).catch(() => {});
   }, [savedId, strategyCode, initialData?.parameters, strategyStatus, isUIStreaming]);
 
   // Regenerate spec on load if we have code but no saved spec
@@ -589,8 +659,12 @@ ${code.slice(0, 800)}`;
     );
   }, [strategyCode, savedSpec]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-  useEffect(() => { localStorage.setItem("strategyBuilderTab", activeTab); }, [activeTab]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  useEffect(() => {
+    localStorage.setItem("strategyBuilderTab", activeTab);
+  }, [activeTab]);
 
   /* Auto-save after UI spec finishes streaming */
   useEffect(() => {
@@ -616,10 +690,12 @@ ${code.slice(0, 800)}`;
     if (savedId !== undefined) {
       updateStrategy(savedId, payload).catch(() => {});
     } else {
-      createStrategy(payload).then((created) => {
-        setSavedId(created.id);
-        window.history.replaceState(null, "", `/strategy/${created.id}`);
-      }).catch(() => {});
+      createStrategy(payload)
+        .then((created) => {
+          setSavedId(created.id);
+          window.history.replaceState(null, "", `/strategy/${created.id}`);
+        })
+        .catch(() => {});
     }
     queryClient.invalidateQueries({ queryKey: queryKeys.strategies });
   }, [isUIStreaming, strategyCode, strategyParams, messages, savedId, activeSpec]);
@@ -782,7 +858,10 @@ ${code.slice(0, 800)}`;
   }, [strategyCode, isUIStreaming, sendToGenerate]);
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
   };
 
   const renderedSpec = useMemo(() => {
@@ -886,15 +965,21 @@ ${code.slice(0, 800)}`;
               {savedId !== undefined ? "Edit Strategy" : "New Strategy"}
             </h2>
             {savedId !== undefined && (
-              <Badge className={`capitalize ${STATUS_STYLES[strategyStatus] ?? STATUS_STYLES.draft}`}>
+              <Badge
+                className={`capitalize ${STATUS_STYLES[strategyStatus] ?? STATUS_STYLES.draft}`}
+              >
                 {strategyStatus}
               </Badge>
             )}
           </div>
           <div className="flex items-center gap-2">
             {savedId !== undefined && (
-              <Button variant="ghost" size="icon-xs" onClick={() => setShowDeleteConfirm(true)}
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
                 <Trash2 className="size-3.5" />
               </Button>
             )}
@@ -902,7 +987,11 @@ ${code.slice(0, 800)}`;
               <>
                 <span className="size-1.5 rounded-full bg-primary animate-pulse" />
                 <span className="text-[11px] text-primary font-medium">
-                  {status === "submitted" ? "Sending…" : status === "streaming" ? "Thinking…" : "Rendering…"}
+                  {status === "submitted"
+                    ? "Sending…"
+                    : status === "streaming"
+                      ? "Thinking…"
+                      : "Rendering…"}
                 </span>
               </>
             ) : (
@@ -917,28 +1006,40 @@ ${code.slice(0, 800)}`;
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
           {messages.map((msg) => (
-            <ChatBubble key={msg.id} msg={msg}
+            <ChatBubble
+              key={msg.id}
+              msg={msg}
               isLastAssistant={msg === messages[messages.length - 1] && msg.role === "assistant"}
-              chatStatus={status} />
+              chatStatus={status}
+            />
           ))}
           {messages.length === 1 && (
             <div className="pl-7 space-y-3">
               {/* Template cards */}
               <div className="grid grid-cols-2 gap-2">
                 {TEMPLATES.map((t) => (
-                  <button key={t.name} onClick={() => sendTemplate(t.prompt)}
+                  <button
+                    key={t.name}
+                    onClick={() => sendTemplate(t.prompt)}
                     disabled={isBusy}
                     className="text-left p-3 rounded-xl border border-border/60 bg-card/50
                                hover:bg-secondary/80 hover:border-primary/20
-                               transition-all cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed">
+                               transition-all cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <span className="text-lg block mb-1">{t.icon}</span>
-                    <span className="text-[12px] font-semibold text-foreground group-hover:text-primary transition-colors block">{t.name}</span>
-                    <span className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{t.prompt}</span>
+                    <span className="text-[12px] font-semibold text-foreground group-hover:text-primary transition-colors block">
+                      {t.name}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">
+                      {t.prompt}
+                    </span>
                   </button>
                 ))}
               </div>
               {/* Quick type hint */}
-              <p className="text-[10px] text-muted-foreground/50 text-center">or describe anything in the chat below</p>
+              <p className="text-[10px] text-muted-foreground/50 text-center">
+                or describe anything in the chat below
+              </p>
             </div>
           )}
           <div ref={bottomRef} />
@@ -948,12 +1049,18 @@ ${code.slice(0, 800)}`;
         <div className="p-3 border-t shrink-0">
           <div className="relative bg-secondary border rounded-xl focus-within:border-ring transition-colors">
             <textarea
-              ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={onKey}
-              placeholder="Describe your trading strategy…" rows={3}
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKey}
+              placeholder="Describe your trading strategy…"
+              rows={3}
               className="w-full bg-transparent px-4 pt-3 pb-10 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none"
             />
             <div className="absolute bottom-2.5 left-4 right-3 flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground select-none">↵ Send&ensp;·&ensp;Shift + ↵ newline</span>
+              <span className="text-[10px] text-muted-foreground select-none">
+                ↵ Send&ensp;·&ensp;Shift + ↵ newline
+              </span>
               <Button size="xs" onClick={send} disabled={input.trim() === "" || isBusy}>
                 Send
               </Button>
@@ -964,7 +1071,11 @@ ${code.slice(0, 800)}`;
 
       {/* ═══════════ Preview Panel ════════════════════════ */}
       <div className="flex-2 md:flex-1 min-w-0 min-h-0 flex flex-col bg-background relative">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col gap-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 min-h-0 flex flex-col gap-0"
+        >
           {/* Header */}
           <div className="relative z-10 border-b shrink-0 bg-background/80 backdrop-blur-sm">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 md:px-5 py-2">
@@ -1001,20 +1112,36 @@ ${code.slice(0, 800)}`;
                 </TabsList>
                 {hasCode && (
                   <>
-                    <Button variant="ghost" size="icon-xs" onClick={regenerateUI} disabled={isUIStreaming || strategyCode === ""}
-                      title="Regenerate dashboard">
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={regenerateUI}
+                      disabled={isUIStreaming || strategyCode === ""}
+                      title="Regenerate dashboard"
+                    >
                       <RotateCw className={`size-3.5 ${isUIStreaming ? "animate-spin" : ""}`} />
                     </Button>
                     <Button variant="outline" size="sm" onClick={saveDraft} disabled={isSaving}>
                       {isSaving ? "Saving…" : "Save Draft"}
                     </Button>
                     {isRunning ? (
-                      <Button variant="destructive" size="sm" onClick={stopRunning} disabled={isStopping} className="gap-1.5">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={stopRunning}
+                        disabled={isStopping}
+                        className="gap-1.5"
+                      >
                         <Square className="size-3" />
                         {isStopping ? "Stopping…" : "Stop"}
                       </Button>
                     ) : (
-                      <Button size="sm" onClick={deploy} disabled={isDeploying || isBusy} className="gap-1.5">
+                      <Button
+                        size="sm"
+                        onClick={deploy}
+                        disabled={isDeploying || isBusy}
+                        className="gap-1.5"
+                      >
                         <Play className="size-3" />
                         {isDeploying ? "Deploying…" : "Deploy"}
                       </Button>
@@ -1036,9 +1163,12 @@ ${code.slice(0, 800)}`;
                     <div className="flex items-start gap-2.5">
                       <Loader2 className="size-4 text-amber-400 mt-0.5" />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground">Dashboard is incomplete</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          Dashboard is incomplete
+                        </p>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                          The generated layout is missing key pieces (header, flow, or params). Click Regenerate or send another message.
+                          The generated layout is missing key pieces (header, flow, or params).
+                          Click Regenerate or send another message.
                         </p>
                       </div>
                     </div>
@@ -1056,10 +1186,16 @@ ${code.slice(0, 800)}`;
                   }}
                 >
                   <VisibilityProvider>
-                    <ActionProvider handlers={{
-                      deploy: async () => { await deploy(); },
-                      pause: async () => { await stopRunning(); },
-                    }}>
+                    <ActionProvider
+                      handlers={{
+                        deploy: async () => {
+                          await deploy();
+                        },
+                        pause: async () => {
+                          await stopRunning();
+                        },
+                      }}
+                    >
                       <Renderer spec={renderedSpec} registry={registry} loading={isUIStreaming} />
                     </ActionProvider>
                   </VisibilityProvider>
@@ -1078,32 +1214,52 @@ ${code.slice(0, 800)}`;
                 <div className="mb-4 rounded-xl bg-card/60 border p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em]">Parameters</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
+                        Parameters
+                      </p>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        These are saved separately from code and override the <span className="font-mono">{"// @param"}</span> defaults at runtime.
+                        These are saved separately from code and override the{" "}
+                        <span className="font-mono">{"// @param"}</span> defaults at runtime.
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      onClick={() => {
-                        const json = JSON.stringify(strategyParams, null, 2);
-                        navigator.clipboard.writeText(json).then(
-                          () => toast.success("Parameters copied"),
-                          () => toast.error("Failed to copy parameters"),
-                        );
-                      }}
-                      disabled={isBusy}
-                    >
-                      Copy JSON
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        onClick={() => {
+                          navigator.clipboard.writeText(strategyCode).then(
+                            () => toast.success("Code copied"),
+                            () => toast.error("Failed to copy code"),
+                          );
+                        }}
+                        disabled={isBusy}
+                      >
+                        Copy code
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        onClick={() => {
+                          const json = JSON.stringify(strategyParams, null, 2);
+                          navigator.clipboard.writeText(json).then(
+                            () => toast.success("Parameters copied"),
+                            () => toast.error("Failed to copy parameters"),
+                          );
+                        }}
+                        disabled={isBusy}
+                      >
+                        Copy JSON
+                      </Button>
+                    </div>
                   </div>
                   <pre className="mt-3 text-xs font-mono text-foreground/90 whitespace-pre-wrap wrap-break-word">
                     {JSON.stringify(strategyParams, null, 2)}
                   </pre>
                 </div>
                 <div className="min-w-0 [&_pre]:overflow-x-auto">
-                  <Streamdown plugins={sdPlugins} mode="static">{"```typescript\n" + strategyCode + "\n```"}</Streamdown>
+                  <Streamdown plugins={sdPlugins} mode="static">
+                    {"```typescript\n" + strategyCode + "\n```"}
+                  </Streamdown>
                 </div>
               </div>
             )}
@@ -1123,7 +1279,8 @@ ${code.slice(0, 800)}`;
                 </div>
                 <h3 className="font-display text-lg text-foreground mb-2">No Performance Data</h3>
                 <p className="text-muted-foreground text-sm max-w-[300px] leading-relaxed">
-                  Save and deploy your strategy to see live performance metrics, PnL tracking, and trade history.
+                  Save and deploy your strategy to see live performance metrics, PnL tracking, and
+                  trade history.
                 </p>
               </div>
             )}
@@ -1134,10 +1291,15 @@ ${code.slice(0, 800)}`;
   );
 }
 
-
 /* ── Logs Panel ──────────────────────────────────────────── */
 
-function LogsPanel({ strategyId, isActive }: { strategyId: string | undefined; isActive: boolean }) {
+function LogsPanel({
+  strategyId,
+  isActive,
+}: {
+  strategyId: string | undefined;
+  isActive: boolean;
+}) {
   const { data: logsData } = useStrategyLogs(strategyId, strategyId !== undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -1203,21 +1365,30 @@ function LogsPanel({ strategyId, isActive }: { strategyId: string | undefined; i
       </div>
 
       {/* Log entries */}
-      <div ref={containerRef} onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-2 font-mono text-[12px] leading-relaxed space-y-0.5">
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 py-2 font-mono text-[12px] leading-relaxed space-y-0.5"
+      >
         {logs.length === 0 && (
           <div className="text-muted-foreground/50 text-center py-8">
-            {isRunning || isActive ? "Waiting for logs…" : "No logs yet. Deploy your strategy to start."}
+            {isRunning || isActive
+              ? "Waiting for logs…"
+              : "No logs yet. Deploy your strategy to start."}
           </div>
         )}
         {logs.map((log, i) => {
           const ts = new Date(log.timestamp * 1000).toLocaleTimeString("en-US", {
-            hour: "2-digit", minute: "2-digit", second: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
           });
           const levelColor =
-            log.level === "error" ? "text-red-400" :
-            log.level === "trade" ? "text-emerald-400" :
-            "text-muted-foreground/70";
+            log.level === "error"
+              ? "text-red-400"
+              : log.level === "trade"
+                ? "text-emerald-400"
+                : "text-muted-foreground/70";
           return (
             <div key={i} className="flex gap-2">
               <span className="text-muted-foreground/40 shrink-0 tabular-nums">{ts}</span>
@@ -1232,13 +1403,14 @@ function LogsPanel({ strategyId, isActive }: { strategyId: string | undefined; i
 
       {/* Scroll-to-bottom button */}
       {!isAtBottom && logs.length > 0 && (
-        <button onClick={scrollToBottom}
+        <button
+          onClick={scrollToBottom}
           className="absolute bottom-4 right-4 size-8 rounded-full bg-secondary border border-border
-                     flex items-center justify-center hover:bg-accent transition-colors cursor-pointer">
+                     flex items-center justify-center hover:bg-accent transition-colors cursor-pointer"
+        >
           <ArrowDown className="size-3.5 text-muted-foreground" />
         </button>
       )}
     </div>
   );
 }
-

@@ -53,10 +53,7 @@ export function requireAdmin(req: Request) {
 
   // Secure default for internet deploys: if token isn't set in prod, block.
   if ((required === null || required === "") && isProd) {
-    return Response.json(
-      { error: "Server not configured: set TRAD_ADMIN_TOKEN" },
-      { status: 503 },
-    );
+    return Response.json({ error: "Server not configured: set TRAD_ADMIN_TOKEN" }, { status: 503 });
   }
 
   // In dev, allow local development without token.
@@ -97,4 +94,3 @@ export function rateLimit(req: Request, opts: { key: string; limit: number; wind
   existing.count++;
   return { allowed: true, remaining: Math.max(0, opts.limit - existing.count), retryAfterMs: 0 };
 }
-

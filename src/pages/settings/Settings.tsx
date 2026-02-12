@@ -1,12 +1,27 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
-import { useAccount, useConnect, useDisconnect, useBalance, useWriteContract, useReadContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from "wagmi";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  useBalance,
+  useWriteContract,
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useChainId,
+  useSwitchChain,
+} from "wagmi";
 import { base } from "wagmi/chains";
 import { formatUnits, formatEther, parseEther, getAddress } from "viem";
-import { Wallet, ChevronDown, ExternalLink, Settings2, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
-import { toast } from "sonner";
 import {
-  useSettings, useSaveSettingsMutation, useDeleteSettingsMutation,
-} from "../../lib/api";
+  Wallet,
+  ChevronDown,
+  ExternalLink,
+  Settings2,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useSettings, useSaveSettingsMutation, useDeleteSettingsMutation } from "../../lib/api";
 import { tradDelegateAbi } from "../../../contracts/abi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,9 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import {
-  Collapsible, CollapsibleTrigger, CollapsibleContent,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 /* ══════════════════════════════════════════════════════════════
    Settings — wallet connection & trading configuration
@@ -72,24 +85,39 @@ export function Settings() {
     query: { enabled: delegateAddress !== null && address !== undefined },
   });
 
-  const depositedEth = depositedBalanceRaw !== undefined
-    ? parseFloat(formatEther(depositedBalanceRaw)).toFixed(6)
-    : "0.000000";
+  const depositedEth =
+    depositedBalanceRaw !== undefined
+      ? parseFloat(formatEther(depositedBalanceRaw)).toFixed(6)
+      : "0.000000";
 
   // Deposit hook
-  const { writeContract: doDeposit, data: depositHash, isPending: isDepositing } = useWriteContract();
-  const { isLoading: isDepositConfirming, isSuccess: isDepositConfirmed } = useWaitForTransactionReceipt({ hash: depositHash, chainId: base.id });
+  const {
+    writeContract: doDeposit,
+    data: depositHash,
+    isPending: isDepositing,
+  } = useWriteContract();
+  const { isLoading: isDepositConfirming, isSuccess: isDepositConfirmed } =
+    useWaitForTransactionReceipt({ hash: depositHash, chainId: base.id });
 
   // Withdraw hook
-  const { writeContract: doWithdraw, data: withdrawHash, isPending: isWithdrawing } = useWriteContract();
-  const { isLoading: isWithdrawConfirming, isSuccess: isWithdrawConfirmed } = useWaitForTransactionReceipt({ hash: withdrawHash, chainId: base.id });
+  const {
+    writeContract: doWithdraw,
+    data: withdrawHash,
+    isPending: isWithdrawing,
+  } = useWriteContract();
+  const { isLoading: isWithdrawConfirming, isSuccess: isWithdrawConfirmed } =
+    useWaitForTransactionReceipt({ hash: withdrawHash, chainId: base.id });
 
   // Refetch balance on confirmation
   const depositToastedRef = useRef<string | undefined>(undefined);
   const withdrawToastedRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (isDepositConfirmed === true && depositHash !== undefined && depositToastedRef.current !== depositHash) {
+    if (
+      isDepositConfirmed === true &&
+      depositHash !== undefined &&
+      depositToastedRef.current !== depositHash
+    ) {
       depositToastedRef.current = depositHash;
       toast.success("Deposit confirmed!");
       refetchDeposited();
@@ -97,7 +125,11 @@ export function Settings() {
   }, [isDepositConfirmed, depositHash, refetchDeposited]);
 
   useEffect(() => {
-    if (isWithdrawConfirmed === true && withdrawHash !== undefined && withdrawToastedRef.current !== withdrawHash) {
+    if (
+      isWithdrawConfirmed === true &&
+      withdrawHash !== undefined &&
+      withdrawToastedRef.current !== withdrawHash
+    ) {
       withdrawToastedRef.current = withdrawHash;
       toast.success("Withdrawal confirmed!");
       refetchDeposited();
@@ -310,36 +342,43 @@ export function Settings() {
         )}
 
         {/* ── Connect Wallet — primary card ───────────── */}
-        <Card className={
-          isConnected !== true
-            ? "mb-8 ring-1 ring-primary/25 shadow-[0_0_50px_-12px_rgba(229,160,13,0.18)] transition-all duration-500"
-            : "mb-8 transition-all duration-500"
-        }>
-          <div className={
-            isConnected === true
-              ? "h-1 bg-linear-to-r from-emerald-500/50 via-emerald-500/20 to-transparent"
-              : "h-1 bg-linear-to-r from-primary/50 via-primary/20 to-transparent"
-          } />
+        <Card
+          className={
+            isConnected !== true
+              ? "mb-8 ring-1 ring-primary/25 shadow-[0_0_50px_-12px_rgba(229,160,13,0.18)] transition-all duration-500"
+              : "mb-8 transition-all duration-500"
+          }
+        >
+          <div
+            className={
+              isConnected === true
+                ? "h-1 bg-linear-to-r from-emerald-500/50 via-emerald-500/20 to-transparent"
+                : "h-1 bg-linear-to-r from-primary/50 via-primary/20 to-transparent"
+            }
+          />
 
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={
-                  isConnected === true
-                    ? "size-11 rounded-xl bg-emerald-500/10 flex items-center justify-center transition-colors duration-300"
-                    : "size-11 rounded-xl bg-primary/10 flex items-center justify-center transition-colors duration-300"
-                }>
-                  <Wallet className={
-                    isConnected === true ? "size-5 text-emerald-400" : "size-5 text-primary"
-                  } />
+                <div
+                  className={
+                    isConnected === true
+                      ? "size-11 rounded-xl bg-emerald-500/10 flex items-center justify-center transition-colors duration-300"
+                      : "size-11 rounded-xl bg-primary/10 flex items-center justify-center transition-colors duration-300"
+                  }
+                >
+                  <Wallet
+                    className={
+                      isConnected === true ? "size-5 text-emerald-400" : "size-5 text-primary"
+                    }
+                  />
                 </div>
                 <div>
                   <CardTitle className="text-lg font-semibold">Connect Wallet</CardTitle>
                   <CardDescription className="mt-0.5 text-[13px]">
                     {isConnected === true
                       ? "Your wallet is linked and ready to trade"
-                      : "Link your Base wallet to enable live trading"
-                    }
+                      : "Link your Base wallet to enable live trading"}
                   </CardDescription>
                 </div>
               </div>
@@ -375,7 +414,9 @@ export function Settings() {
                   {isOnBase !== true && (
                     <div className="mt-3 p-3 bg-amber-500/5 border border-amber-500/15 rounded-lg flex items-center justify-between gap-3">
                       <p className="text-[12px] text-amber-300">
-                        Network mismatch: connected to <span className="font-mono">{connectedNetwork}</span>. Switch to Base to deposit/withdraw.
+                        Network mismatch: connected to{" "}
+                        <span className="font-mono">{connectedNetwork}</span>. Switch to Base to
+                        deposit/withdraw.
                       </p>
                       <Button
                         type="button"
@@ -409,12 +450,10 @@ export function Settings() {
             ) : (
               <div className="space-y-5">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Connect your Base wallet to start trading on RobinPump.fun.
-                  Your wallet address will be saved automatically.
+                  Connect your Base wallet to start trading on RobinPump.fun. Your wallet address
+                  will be saved automatically.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {connectorButtons}
-                </div>
+                <div className="flex flex-col sm:flex-row gap-3">{connectorButtons}</div>
               </div>
             )}
           </CardContent>
@@ -494,7 +533,12 @@ export function Settings() {
                   />
                   <Button
                     onClick={handleDeposit}
-                    disabled={isOnBase !== true || isSwitchingChain === true || isDepositing === true || isDepositConfirming === true}
+                    disabled={
+                      isOnBase !== true ||
+                      isSwitchingChain === true ||
+                      isDepositing === true ||
+                      isDepositConfirming === true
+                    }
                     className="gap-2 min-w-[120px]"
                   >
                     <ArrowDownToLine className="size-4" />
@@ -502,8 +546,7 @@ export function Settings() {
                       ? "Submitting…"
                       : isDepositConfirming === true
                         ? "Confirming…"
-                        : "Deposit"
-                    }
+                        : "Deposit"}
                   </Button>
                 </div>
               </div>
@@ -513,7 +556,13 @@ export function Settings() {
                 variant="outline"
                 size="sm"
                 onClick={handleWithdrawAll}
-                disabled={isOnBase !== true || isSwitchingChain === true || isWithdrawing === true || isWithdrawConfirming === true || depositedEth === "0.000000"}
+                disabled={
+                  isOnBase !== true ||
+                  isSwitchingChain === true ||
+                  isWithdrawing === true ||
+                  isWithdrawConfirming === true ||
+                  depositedEth === "0.000000"
+                }
                 className="gap-2"
               >
                 <ArrowUpFromLine className="size-4" />
@@ -521,8 +570,7 @@ export function Settings() {
                   ? "Submitting…"
                   : isWithdrawConfirming === true
                     ? "Confirming…"
-                    : "Withdraw All"
-                }
+                    : "Withdraw All"}
               </Button>
 
               {/* Transaction status */}
@@ -579,11 +627,13 @@ export function Settings() {
                       </CardDescription>
                     </div>
                   </div>
-                  <ChevronDown className={
-                    advancedOpen === true
-                      ? "size-4 text-muted-foreground transition-transform duration-200 rotate-180"
-                      : "size-4 text-muted-foreground transition-transform duration-200"
-                  } />
+                  <ChevronDown
+                    className={
+                      advancedOpen === true
+                        ? "size-4 text-muted-foreground transition-transform duration-200 rotate-180"
+                        : "size-4 text-muted-foreground transition-transform duration-200"
+                    }
+                  />
                 </div>
               </CardHeader>
             </CollapsibleTrigger>
@@ -637,10 +687,7 @@ export function Settings() {
                       Simulate trades without executing real transactions on-chain.
                     </p>
                   </div>
-                  <Switch
-                    checked={dryRun}
-                    onCheckedChange={toggleDryRun}
-                  />
+                  <Switch checked={dryRun} onCheckedChange={toggleDryRun} />
                 </div>
 
                 {/* Save button */}

@@ -36,7 +36,8 @@ export const catalog = defineCatalog(schema, {
         exchange: z.enum(["robinpump"]),
         status: z.enum(["draft", "active", "paused", "error"]).default("draft"),
       }),
-      description: "Header showing the strategy name, description, target exchange badge, and status. Always include a description summarizing what the strategy does.",
+      description:
+        "Header showing the strategy name, description, target exchange badge, and status. Always include a description summarizing what the strategy does.",
     },
 
     /* ── Flow blocks (WHEN → IF → THEN) ─────────────────── */
@@ -70,7 +71,8 @@ export const catalog = defineCatalog(schema, {
     MetricRow: {
       props: z.object({}),
       slots: ["default"],
-      description: "Full-width row of MetricCards displayed in a single 4-column row directly below the chart. Place exactly 4 MetricCards inside.",
+      description:
+        "Full-width row of MetricCards displayed in a single 4-column row directly below the chart. Place exactly 4 MetricCards inside.",
     },
 
     /* ── Charts ──────────────────────────────────────────── */
@@ -106,13 +108,25 @@ export const catalog = defineCatalog(schema, {
             });
           }
           if (v.min !== undefined && !Number.isFinite(v.min)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be finite", path: ["min"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be finite",
+              path: ["min"],
+            });
           }
           if (v.max !== undefined && !Number.isFinite(v.max)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "max must be finite", path: ["max"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "max must be finite",
+              path: ["max"],
+            });
           }
           if (v.step !== undefined && (!Number.isFinite(v.step) || v.step <= 0)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "step must be > 0", path: ["step"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "step must be > 0",
+              path: ["step"],
+            });
           }
           if (v.min !== undefined && v.max !== undefined && v.min > v.max) {
             ctx.addIssue({
@@ -211,16 +225,32 @@ export const catalog = defineCatalog(schema, {
             });
           }
           if (v.min !== undefined && !Number.isFinite(v.min)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be finite", path: ["min"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be finite",
+              path: ["min"],
+            });
           }
           if (v.max !== undefined && !Number.isFinite(v.max)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "max must be finite", path: ["max"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "max must be finite",
+              path: ["max"],
+            });
           }
           if (v.step !== undefined && (!Number.isFinite(v.step) || v.step <= 0)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "step must be > 0", path: ["step"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "step must be > 0",
+              path: ["step"],
+            });
           }
           if (v.min !== undefined && v.max !== undefined && v.min > v.max) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be <= max", path: ["min"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be <= max",
+              path: ["min"],
+            });
           }
         }),
       description:
@@ -246,90 +276,132 @@ export const catalog = defineCatalog(schema, {
             });
           }
           if (v.min !== undefined && !Number.isFinite(v.min)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be finite", path: ["min"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be finite",
+              path: ["min"],
+            });
           }
           if (v.max !== undefined && !Number.isFinite(v.max)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "max must be finite", path: ["max"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "max must be finite",
+              path: ["max"],
+            });
           }
           if (v.step !== undefined && (!Number.isFinite(v.step) || v.step <= 0)) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "step must be > 0", path: ["step"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "step must be > 0",
+              path: ["step"],
+            });
           }
           if (v.min !== undefined && v.max !== undefined && v.min > v.max) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be <= max", path: ["min"] });
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be <= max",
+              path: ["min"],
+            });
           }
         }),
       description:
         "USD amount input (NumberInput with unit fixed to USD). Use for market cap thresholds and USD-denominated limits.",
     },
     BpsInput: {
-      props: z.object({
-        label: z.string(),
-        paramKey: paramKeySchema,
-        defaultValue: z.number().int().min(0).max(5000),
-        min: z.number().int().min(0).max(5000).optional().default(0),
-        max: z.number().int().min(0).max(5000).optional().default(5000),
-        step: z.number().int().min(1).max(500).optional().default(25),
-        description: z.string().optional(),
-      }).superRefine((v, ctx) => {
-        if (v.min > v.max) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be <= max", path: ["min"] });
-        }
-        if (v.defaultValue < v.min || v.defaultValue > v.max) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "defaultValue must be within [min,max]",
-            path: ["defaultValue"],
-          });
-        }
-      }),
+      props: z
+        .object({
+          label: z.string(),
+          paramKey: paramKeySchema,
+          defaultValue: z.number().int().min(0).max(5000),
+          min: z.number().int().min(0).max(5000).optional().default(0),
+          max: z.number().int().min(0).max(5000).optional().default(5000),
+          step: z.number().int().min(1).max(500).optional().default(25),
+          description: z.string().optional(),
+        })
+        .superRefine((v, ctx) => {
+          if (v.min > v.max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be <= max",
+              path: ["min"],
+            });
+          }
+          if (v.defaultValue < v.min || v.defaultValue > v.max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "defaultValue must be within [min,max]",
+              path: ["defaultValue"],
+            });
+          }
+        }),
       description:
         "Basis points input (0-5000). Use for slippage, spreads, fee thresholds, etc. 100 bps = 1%.",
     },
     PercentInput: {
-      props: z.object({
-        label: z.string(),
-        paramKey: paramKeySchema,
-        defaultValue: z.number().min(0).max(100),
-        min: z.number().min(0).max(100).optional().default(0),
-        max: z.number().min(0).max(100).optional().default(100),
-        step: z.number().min(0.01).max(100).optional().default(1),
-        description: z.string().optional(),
-      }).superRefine((v, ctx) => {
-        if (v.min > v.max) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be <= max", path: ["min"] });
-        }
-        if (v.defaultValue < v.min || v.defaultValue > v.max) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "defaultValue must be within [min,max]",
-            path: ["defaultValue"],
-          });
-        }
-      }),
+      props: z
+        .object({
+          label: z.string(),
+          paramKey: paramKeySchema,
+          defaultValue: z.number().min(0).max(100),
+          min: z.number().min(0).max(100).optional().default(0),
+          max: z.number().min(0).max(100).optional().default(100),
+          step: z.number().min(0.01).max(100).optional().default(1),
+          description: z.string().optional(),
+        })
+        .superRefine((v, ctx) => {
+          if (v.min > v.max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be <= max",
+              path: ["min"],
+            });
+          }
+          if (v.defaultValue < v.min || v.defaultValue > v.max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "defaultValue must be within [min,max]",
+              path: ["defaultValue"],
+            });
+          }
+        }),
       description:
         "Percent input (0-100). Use for allocations, take-profit percentages, stop-loss percentages, etc.",
     },
     IntegerInput: {
-      props: z.object({
-        label: z.string(),
-        paramKey: paramKeySchema,
-        defaultValue: z.number().int(),
-        min: z.number().int().optional(),
-        max: z.number().int().optional(),
-        step: z.number().int().min(1).optional().default(1),
-        unit: z.string().optional(),
-        description: z.string().optional(),
-      }).superRefine((v, ctx) => {
-        if (v.min !== undefined && v.max !== undefined && v.min > v.max) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "min must be <= max", path: ["min"] });
-        }
-        if (v.min !== undefined && v.defaultValue < v.min) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "defaultValue must be >= min", path: ["defaultValue"] });
-        }
-        if (v.max !== undefined && v.defaultValue > v.max) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "defaultValue must be <= max", path: ["defaultValue"] });
-        }
-      }),
+      props: z
+        .object({
+          label: z.string(),
+          paramKey: paramKeySchema,
+          defaultValue: z.number().int(),
+          min: z.number().int().optional(),
+          max: z.number().int().optional(),
+          step: z.number().int().min(1).optional().default(1),
+          unit: z.string().optional(),
+          description: z.string().optional(),
+        })
+        .superRefine((v, ctx) => {
+          if (v.min !== undefined && v.max !== undefined && v.min > v.max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "min must be <= max",
+              path: ["min"],
+            });
+          }
+          if (v.min !== undefined && v.defaultValue < v.min) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "defaultValue must be >= min",
+              path: ["defaultValue"],
+            });
+          }
+          if (v.max !== undefined && v.defaultValue > v.max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "defaultValue must be <= max",
+              path: ["defaultValue"],
+            });
+          }
+        }),
       description:
         "Integer input. Use for counts, limits, sample sizes, and other whole-number knobs.",
     },

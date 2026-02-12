@@ -170,9 +170,10 @@ export const strategyRoutes = {
         }
 
         const dbTrades = await prisma.strategyTrade.findMany({
-          where: rangeSeconds === null
-            ? { runId: run.id }
-            : { runId: run.id, timestamp: { gte: cutoff } },
+          where:
+            rangeSeconds === null
+              ? { runId: run.id }
+              : { runId: run.id, timestamp: { gte: cutoff } },
           orderBy: { idx: "asc" },
         });
 
@@ -234,7 +235,8 @@ export const strategyRoutes = {
         }
 
         const totalPnlEth = cum;
-        const totalPnlPct = run.initialCapitalEth > 0 ? (totalPnlEth / run.initialCapitalEth) * 100 : 0;
+        const totalPnlPct =
+          run.initialCapitalEth > 0 ? (totalPnlEth / run.initialCapitalEth) * 100 : 0;
         const avgTradePnlEth = trades.length > 0 ? totalPnlEth / trades.length : 0;
         const winRate = sellCount > 0 ? (sellWins / sellCount) * 100 : 0;
 
@@ -329,7 +331,10 @@ export const strategyRoutes = {
         return Response.json(strategy);
       } catch (e) {
         console.error("POST /api/strategies/:id/deploy error:", e);
-        return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+        return Response.json(
+          { error: e instanceof Error ? e.message : String(e) },
+          { status: 400 },
+        );
       }
     },
   },
@@ -344,7 +349,10 @@ export const strategyRoutes = {
         return Response.json(strategy);
       } catch (e) {
         console.error("POST /api/strategies/:id/stop error:", e);
-        return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+        return Response.json(
+          { error: e instanceof Error ? e.message : String(e) },
+          { status: 400 },
+        );
       }
     },
   },

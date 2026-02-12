@@ -1,9 +1,4 @@
-import {
-  QueryClient,
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { QueryClient, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 /* ══════════════════════════════════════════════════════════════
    Shared API layer — all fetch() calls in one place,
@@ -125,9 +120,7 @@ export async function fetchCoins(limit = 50) {
 
 /** Fetches trades for a coin pair, returned in chronological order. */
 export async function fetchCoinTrades(pairAddress: string, limit = 50) {
-  const res = await fetch(
-    `/api/robinpump/coins/${pairAddress}/trades?limit=${limit}`,
-  );
+  const res = await fetch(`/api/robinpump/coins/${pairAddress}/trades?limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch trades");
   const data: unknown = await res.json();
   if (!Array.isArray(data)) return [] as TradeData[];
@@ -193,12 +186,18 @@ export async function updateStrategy(id: string, payload: StrategyPayload) {
 }
 
 export async function deleteStrategy(id: string) {
-  const res = await fetch(`/api/strategies/${id}`, { method: "DELETE", headers: getAdminAuthHeaders() });
+  const res = await fetch(`/api/strategies/${id}`, {
+    method: "DELETE",
+    headers: getAdminAuthHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to delete strategy");
 }
 
 export async function deployStrategy(id: string) {
-  const res = await fetch(`/api/strategies/${id}/deploy`, { method: "POST", headers: getAdminAuthHeaders() });
+  const res = await fetch(`/api/strategies/${id}/deploy`, {
+    method: "POST",
+    headers: getAdminAuthHeaders(),
+  });
   if (!res.ok) {
     const err = (await res.json()) as { error?: string };
     throw new Error(err.error ?? "Deploy failed");
@@ -207,7 +206,10 @@ export async function deployStrategy(id: string) {
 }
 
 export async function stopStrategy(id: string) {
-  const res = await fetch(`/api/strategies/${id}/stop`, { method: "POST", headers: getAdminAuthHeaders() });
+  const res = await fetch(`/api/strategies/${id}/stop`, {
+    method: "POST",
+    headers: getAdminAuthHeaders(),
+  });
   if (!res.ok) {
     const err = (await res.json()) as { error?: string };
     throw new Error(err.error ?? "Stop failed");
@@ -318,7 +320,10 @@ export async function saveSettings(params: {
 }
 
 export async function deleteSettings(exchange: string) {
-  const res = await fetch(`/api/settings/${exchange}`, { method: "DELETE", headers: getAdminAuthHeaders() });
+  const res = await fetch(`/api/settings/${exchange}`, {
+    method: "DELETE",
+    headers: getAdminAuthHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to delete settings");
 }
 
@@ -380,7 +385,8 @@ export function useStrategyPerformance(params: StrategyPerformanceQueryParams) {
   const runKey = params.runId ?? "";
   return useQuery({
     queryKey: queryKeys.strategyPerformance(params.id ?? "", params.range, runKey),
-    queryFn: () => fetchStrategyPerformance({ id: params.id!, range: params.range, runId: params.runId }),
+    queryFn: () =>
+      fetchStrategyPerformance({ id: params.id!, range: params.range, runId: params.runId }),
     enabled: params.id !== undefined && params.enabled,
     refetchInterval: params.pollMs ?? false,
   });

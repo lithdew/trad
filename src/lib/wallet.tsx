@@ -4,10 +4,7 @@ import { coinbaseWallet, injected } from "wagmi/connectors";
 
 export const wagmiConfig = createConfig({
   chains: [base],
-  connectors: [
-    coinbaseWallet({ appName: "trad" }),
-    injected(),
-  ],
+  connectors: [coinbaseWallet({ appName: "trad" }), injected()],
   transports: {
     [base.id]: http(),
   },

@@ -148,15 +148,13 @@ const ownerAccount =
 const ownerWallet =
   ownerAccount !== null
     ? createWalletClient({
-      account: ownerAccount,
-      chain: base,
-      transport: http(rpcUrl),
-    })
+        account: ownerAccount,
+        chain: base,
+        transport: http(rpcUrl),
+      })
     : null;
 
-const pairAbi = parseAbi([
-  "function token() view returns (address)",
-]);
+const pairAbi = parseAbi(["function token() view returns (address)"]);
 
 const erc20Abi = parseAbi([
   "function decimals() view returns (uint8)",
@@ -230,7 +228,9 @@ console.log();
 
 if (paused === true) {
   if (doSetup !== true || ownerWallet === null || ownerAccount === null) {
-    console.error("Error: TradDelegate is paused. Provide OWNER_PRIVATE_KEY and DO_SETUP=true to unpause.");
+    console.error(
+      "Error: TradDelegate is paused. Provide OWNER_PRIVATE_KEY and DO_SETUP=true to unpause.",
+    );
     process.exit(1);
   }
   if (ownerAccount.address.toLowerCase() !== delegateOwner.toLowerCase()) {
@@ -254,7 +254,9 @@ if (paused === true) {
 if (delegateOperator.toLowerCase() !== operatorAccount.address.toLowerCase()) {
   if (doSetup !== true || ownerWallet === null || ownerAccount === null) {
     console.error("Error: TradDelegate.operator is not OPERATOR_PRIVATE_KEY's address.");
-    console.error("  Fix: setOperator() from the owner, or rerun with OWNER_PRIVATE_KEY + DO_SETUP=true.");
+    console.error(
+      "  Fix: setOperator() from the owner, or rerun with OWNER_PRIVATE_KEY + DO_SETUP=true.",
+    );
     process.exit(1);
   }
   if (ownerAccount.address.toLowerCase() !== delegateOwner.toLowerCase()) {
@@ -302,7 +304,9 @@ if (pairRaw === null && tokenHintRaw !== null) {
 }
 
 if (pairRaw === null) {
-  console.log("PAIR_ADDRESS not set. Auto-picking a non-graduated RobinPump pair from the subgraph…");
+  console.log(
+    "PAIR_ADDRESS not set. Auto-picking a non-graduated RobinPump pair from the subgraph…",
+  );
   const coins = await RobinPump.fetchCoins("newest", 80, 0);
   for (const c of coins) {
     if (c.graduated === true) continue;
@@ -362,7 +366,9 @@ let isAllowed = await publicClient.readContract({
 if (isAllowed !== true) {
   if (doSetup !== true || ownerWallet === null || ownerAccount === null) {
     console.error("Error: Pair is not allowlisted on TradDelegate.");
-    console.error("  Fix: setPairCodehashAllowed() from owner, or rerun with OWNER_PRIVATE_KEY + DO_SETUP=true.");
+    console.error(
+      "  Fix: setPairCodehashAllowed() from owner, or rerun with OWNER_PRIVATE_KEY + DO_SETUP=true.",
+    );
     process.exit(1);
   }
   if (ownerAccount.address.toLowerCase() !== delegateOwner.toLowerCase()) {
@@ -457,7 +463,13 @@ for (const log of buyReceipt.logs) {
   try {
     const decoded = decodeEventLog({ abi: tradDelegateAbi, data: log.data, topics: log.topics });
     if (decoded.eventName !== "BuyExecuted") continue;
-    const args = decoded.args as { tokensReceived: bigint; feeTaken: bigint; ethSpent: bigint; pair: string; user: string };
+    const args = decoded.args as {
+      tokensReceived: bigint;
+      feeTaken: bigint;
+      ethSpent: bigint;
+      pair: string;
+      user: string;
+    };
     console.log("BuyExecuted:");
     console.log(`  user:           ${args.user}`);
     console.log(`  pair:           ${args.pair}`);
@@ -486,7 +498,9 @@ for (const log of buyReceipt.logs) {
   }
 }
 
-console.log(`Token Transfer → TradDelegate (sum): ${formatUnits(tokenTransfersToDelegate, tokenDecimals)}`);
+console.log(
+  `Token Transfer → TradDelegate (sum): ${formatUnits(tokenTransfersToDelegate, tokenDecimals)}`,
+);
 console.log();
 
 const userTokenBalAfterBuy = await publicClient.readContract({
@@ -496,7 +510,9 @@ const userTokenBalAfterBuy = await publicClient.readContract({
   args: [userAccount.address, tokenAddress],
 });
 
-console.log(`User token balance in TradDelegate (after buy): ${formatUnits(userTokenBalAfterBuy, tokenDecimals)}`);
+console.log(
+  `User token balance in TradDelegate (after buy): ${formatUnits(userTokenBalAfterBuy, tokenDecimals)}`,
+);
 
 // ── Execute sell via operator ───────────────────────────────────────────────
 
@@ -523,7 +539,13 @@ for (const log of sellReceipt.logs) {
   try {
     const decoded = decodeEventLog({ abi: tradDelegateAbi, data: log.data, topics: log.topics });
     if (decoded.eventName !== "SellExecuted") continue;
-    const args = decoded.args as { tokensSold: bigint; feeTaken: bigint; ethReceived: bigint; pair: string; user: string };
+    const args = decoded.args as {
+      tokensSold: bigint;
+      feeTaken: bigint;
+      ethReceived: bigint;
+      pair: string;
+      user: string;
+    };
     console.log("SellExecuted:");
     console.log(`  user:        ${args.user}`);
     console.log(`  pair:        ${args.pair}`);
@@ -550,7 +572,9 @@ for (const log of sellReceipt.logs) {
   }
 }
 
-console.log(`Token Transfer from TradDelegate (sum): ${formatUnits(tokenTransfersFromDelegate, tokenDecimals)}`);
+console.log(
+  `Token Transfer from TradDelegate (sum): ${formatUnits(tokenTransfersFromDelegate, tokenDecimals)}`,
+);
 console.log();
 
 const userDepositedAfter = await publicClient.readContract({
@@ -603,6 +627,7 @@ console.log("Done.");
 if (tokensReceivedFromEvent !== null && feeTakenFromEvent !== null) {
   console.log("Notes:");
   console.log("  - BuyExecuted/SellExecuted came from TradDelegate (proves operator path).");
-  console.log("  - ERC-20 Transfer logs were decoded from the token contract (proves mainnet pair/token were hit).");
+  console.log(
+    "  - ERC-20 Transfer logs were decoded from the token contract (proves mainnet pair/token were hit).",
+  );
 }
-

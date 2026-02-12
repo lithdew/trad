@@ -115,4 +115,3 @@ Typecheck:
 ```bash
 bun run lint
 ```
-

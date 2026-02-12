@@ -25,10 +25,7 @@ export const marketplaceRoutes = {
           where.category = category;
         }
         if (search !== "") {
-          where.OR = [
-            { title: { contains: search } },
-            { description: { contains: search } },
-          ];
+          where.OR = [{ title: { contains: search } }, { description: { contains: search } }];
         }
 
         let orderBy: Record<string, string>;
@@ -107,19 +104,25 @@ export const marketplaceRoutes = {
           return Response.json({ error: "Strategy not found" }, { status: 404 });
         }
         if (strategy.code === null || strategy.code === "") {
-          return Response.json({ error: "Strategy has no code — generate code first" }, { status: 400 });
+          return Response.json(
+            { error: "Strategy has no code — generate code first" },
+            { status: 400 },
+          );
         }
 
         const priceEth = typeof body.priceEth === "number" ? body.priceEth : 0;
-        const title = typeof body.title === "string" && body.title.trim() !== ""
-          ? body.title.trim()
-          : strategy.name;
-        const description = typeof body.description === "string" && body.description.trim() !== ""
-          ? body.description.trim()
-          : strategy.description ?? null;
-        const category = typeof body.category === "string" && body.category.trim() !== ""
-          ? body.category.trim()
-          : "general";
+        const title =
+          typeof body.title === "string" && body.title.trim() !== ""
+            ? body.title.trim()
+            : strategy.name;
+        const description =
+          typeof body.description === "string" && body.description.trim() !== ""
+            ? body.description.trim()
+            : (strategy.description ?? null);
+        const category =
+          typeof body.category === "string" && body.category.trim() !== ""
+            ? body.category.trim()
+            : "general";
 
         const listing = await prisma.marketplaceListing.create({
           data: {

@@ -237,25 +237,69 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         { method: "PUT", path: "/api/strategies/:id", description: "Update strategy (admin)" },
         { method: "DELETE", path: "/api/strategies/:id", description: "Delete strategy (admin)" },
         { method: "GET", path: "/api/strategies/:id/runs", description: "List strategy runs" },
-        { method: "GET", path: "/api/strategies/:id/performance", description: "Strategy performance summary + curve" },
-        { method: "GET", path: "/api/strategies/:id/logs", description: "Runtime logs (running or last-stopped)" },
-        { method: "POST", path: "/api/strategies/:id/deploy", description: "Start strategy runtime (admin)" },
-        { method: "POST", path: "/api/strategies/:id/stop", description: "Stop strategy runtime (admin)" },
+        {
+          method: "GET",
+          path: "/api/strategies/:id/performance",
+          description: "Strategy performance summary + curve",
+        },
+        {
+          method: "GET",
+          path: "/api/strategies/:id/logs",
+          description: "Runtime logs (running or last-stopped)",
+        },
+        {
+          method: "POST",
+          path: "/api/strategies/:id/deploy",
+          description: "Start strategy runtime (admin)",
+        },
+        {
+          method: "POST",
+          path: "/api/strategies/:id/stop",
+          description: "Stop strategy runtime (admin)",
+        },
         { method: "GET", path: "/api/strategies/running", description: "List running strategies" },
-        { method: "GET", path: "/api/settings", description: "List masked exchange secrets (admin)" },
+        {
+          method: "GET",
+          path: "/api/settings",
+          description: "List masked exchange secrets (admin)",
+        },
         { method: "POST", path: "/api/settings", description: "Upsert exchange secret (admin)" },
-        { method: "DELETE", path: "/api/settings/:exchange", description: "Delete exchange secret (admin)" },
+        {
+          method: "DELETE",
+          path: "/api/settings/:exchange",
+          description: "Delete exchange secret (admin)",
+        },
         { method: "GET", path: "/api/settings/dry-run", description: "Dry-run state (admin)" },
         { method: "POST", path: "/api/settings/dry-run", description: "Toggle dry-run (admin)" },
         { method: "GET", path: "/api/contract/info", description: "TradDelegate configuration" },
-        { method: "GET", path: "/api/contract/balance/:address", description: "TradDelegate deposited ETH for user" },
+        {
+          method: "GET",
+          path: "/api/contract/balance/:address",
+          description: "TradDelegate deposited ETH for user",
+        },
         { method: "POST", path: "/api/chat", description: "Strategy code-gen chat (Sonnet 4.5)" },
         { method: "POST", path: "/api/generate", description: "UI spec generation" },
         { method: "GET", path: "/api/robinpump/coins", description: "RobinPump coin list" },
-        { method: "GET", path: "/api/robinpump/coins/:pair", description: "RobinPump coin details" },
-        { method: "GET", path: "/api/robinpump/coins/:pair/trades", description: "RobinPump trades" },
-        { method: "GET", path: "/api/robinpump/coins/:pair/metadata", description: "Coin + IPFS metadata" },
-        { method: "GET", path: "/api/robinpump/coins-enriched", description: "Coin list enriched with market cap" },
+        {
+          method: "GET",
+          path: "/api/robinpump/coins/:pair",
+          description: "RobinPump coin details",
+        },
+        {
+          method: "GET",
+          path: "/api/robinpump/coins/:pair/trades",
+          description: "RobinPump trades",
+        },
+        {
+          method: "GET",
+          path: "/api/robinpump/coins/:pair/metadata",
+          description: "Coin + IPFS metadata",
+        },
+        {
+          method: "GET",
+          path: "/api/robinpump/coins-enriched",
+          description: "Coin list enriched with market cap",
+        },
         { method: "POST", path: "/api/robinpump/trade", description: "Execute trade (admin)" },
       ];
 
@@ -292,8 +336,9 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           return { stdout: "", stderr: `Error: failed to open dev.db (${err})\n`, exitCode: 1 };
         }
 
-        const rows = db.query<StrategyListRow, [number, number]>(
-          `SELECT
+        const rows = db
+          .query<StrategyListRow, [number, number]>(
+            `SELECT
             id,
             name,
             description,
@@ -308,7 +353,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           FROM Strategy
           ORDER BY updatedAt DESC
           LIMIT ? OFFSET ?`,
-        ).all(limit, offset);
+          )
+          .all(limit, offset);
 
         const out: Record<string, unknown>[] = [];
         for (const s of rows) {
@@ -336,13 +382,21 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           });
         }
 
-        return { stdout: JSON.stringify({ count: out.length, strategies: out }, null, 2) + "\n", stderr: "", exitCode: 0 };
+        return {
+          stdout: JSON.stringify({ count: out.length, strategies: out }, null, 2) + "\n",
+          stderr: "",
+          exitCode: 0,
+        };
       }
 
       if (action === "get") {
         const strategyId = actionArgs[0] ?? null;
         if (strategyId === null || strategyId === "") {
-          return { stdout: "", stderr: "Error: strategyId required\nUsage: trad strategies get <strategyId>\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: "Error: strategyId required\nUsage: trad strategies get <strategyId>\n",
+            exitCode: 1,
+          };
         }
 
         const { values } = parseArgs({
@@ -367,8 +421,9 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           return { stdout: "", stderr: `Error: failed to open dev.db (${err})\n`, exitCode: 1 };
         }
 
-        const s = db.query<StrategyGetRow, [string]>(
-          `SELECT
+        const s = db
+          .query<StrategyGetRow, [string]>(
+            `SELECT
             id,
             name,
             description,
@@ -384,7 +439,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           FROM Strategy
           WHERE id = ?
           LIMIT 1`,
-        ).get(strategyId);
+          )
+          .get(strategyId);
 
         if (s === null) {
           return { stdout: "", stderr: `Error: strategy not found: ${strategyId}\n`, exitCode: 1 };
@@ -406,7 +462,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         };
 
         if (includeParams) {
-          out.parameters = s.parameters !== null ? (safeJsonParseParamState(s.parameters) ?? s.parameters) : null;
+          out.parameters =
+            s.parameters !== null ? (safeJsonParseParamState(s.parameters) ?? s.parameters) : null;
         }
         if (includeConfig) out.config = s.config;
         if (includeChat) out.chatHistory = s.chatHistory;
@@ -423,7 +480,12 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
       if (action === "logs") {
         const strategyId = actionArgs[0] ?? null;
         if (strategyId === null || strategyId === "") {
-          return { stdout: "", stderr: "Error: strategyId required\nUsage: trad strategies logs <strategyId> [--limit N]\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr:
+              "Error: strategyId required\nUsage: trad strategies logs <strategyId> [--limit N]\n",
+            exitCode: 1,
+          };
         }
 
         const { values } = parseArgs({
@@ -437,7 +499,11 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
 
         const rt = getStrategyRuntime(strategyId);
         if (rt === null) {
-          return { stdout: JSON.stringify({ strategyId, isRunning: false, logs: [] }, null, 2) + "\n", stderr: "", exitCode: 0 };
+          return {
+            stdout: JSON.stringify({ strategyId, isRunning: false, logs: [] }, null, 2) + "\n",
+            stderr: "",
+            exitCode: 0,
+          };
         }
 
         const logs = rt.logs.slice(-limit);
@@ -447,7 +513,12 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
       if (action === "runs") {
         const strategyId = actionArgs[0] ?? null;
         if (strategyId === null || strategyId === "") {
-          return { stdout: "", stderr: "Error: strategyId required\nUsage: trad strategies runs <strategyId> [--limit N]\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr:
+              "Error: strategyId required\nUsage: trad strategies runs <strategyId> [--limit N]\n",
+            exitCode: 1,
+          };
         }
 
         const { values } = parseArgs({
@@ -464,8 +535,9 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           return { stdout: "", stderr: `Error: failed to open dev.db (${err})\n`, exitCode: 1 };
         }
 
-        const runs = db.query<StrategyRunSummaryRow, [string, number]>(
-          `SELECT
+        const runs = db
+          .query<StrategyRunSummaryRow, [string, number]>(
+            `SELECT
             r.id,
             r.strategyId,
             r.startedAt,
@@ -480,7 +552,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           WHERE r.strategyId = ?
           ORDER BY r.startedAt DESC
           LIMIT ?`,
-        ).all(strategyId, limit);
+          )
+          .all(strategyId, limit);
 
         const out: Record<string, unknown>[] = [];
         for (const run of runs) {
@@ -504,7 +577,12 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
       if (action === "trades") {
         const strategyId = actionArgs[0] ?? null;
         if (strategyId === null || strategyId === "") {
-          return { stdout: "", stderr: "Error: strategyId required\nUsage: trad strategies trades <strategyId> [--runId <id>] [--limit N]\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr:
+              "Error: strategyId required\nUsage: trad strategies trades <strategyId> [--runId <id>] [--limit N]\n",
+            exitCode: 1,
+          };
         }
 
         const { values } = parseArgs({
@@ -526,37 +604,48 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
 
         let run = null as null | StrategyRunLookupRow;
         if (runId !== null) {
-          run = db.query<StrategyRunLookupRow, [string, string]>(
-            `SELECT id, startedAt
+          run = db
+            .query<StrategyRunLookupRow, [string, string]>(
+              `SELECT id, startedAt
             FROM StrategyRun
             WHERE id = ? AND strategyId = ?
             LIMIT 1`,
-          ).get(runId, strategyId);
+            )
+            .get(runId, strategyId);
         } else {
-          run = db.query<StrategyRunLookupRow, [string]>(
-            `SELECT id, startedAt
+          run = db
+            .query<StrategyRunLookupRow, [string]>(
+              `SELECT id, startedAt
             FROM StrategyRun
             WHERE strategyId = ? AND stoppedAt IS NULL
             ORDER BY startedAt DESC
             LIMIT 1`,
-          ).get(strategyId);
+            )
+            .get(strategyId);
           if (run === null) {
-            run = db.query<StrategyRunLookupRow, [string]>(
-              `SELECT id, startedAt
+            run = db
+              .query<StrategyRunLookupRow, [string]>(
+                `SELECT id, startedAt
               FROM StrategyRun
               WHERE strategyId = ?
               ORDER BY startedAt DESC
               LIMIT 1`,
-            ).get(strategyId);
+              )
+              .get(strategyId);
           }
         }
 
         if (run === null) {
-          return { stdout: JSON.stringify({ strategyId, run: null, trades: [] }, null, 2) + "\n", stderr: "", exitCode: 0 };
+          return {
+            stdout: JSON.stringify({ strategyId, run: null, trades: [] }, null, 2) + "\n",
+            stderr: "",
+            exitCode: 0,
+          };
         }
 
-        const trades = db.query<StrategyTradeRow, [string, number]>(
-          `SELECT
+        const trades = db
+          .query<StrategyTradeRow, [string, number]>(
+            `SELECT
             idx,
             timestamp,
             side,
@@ -575,7 +664,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           WHERE runId = ?
           ORDER BY idx DESC
           LIMIT ?`,
-        ).all(run.id, limit);
+          )
+          .all(run.id, limit);
 
         const out: Record<string, unknown>[] = [];
         for (let i = trades.length - 1; i >= 0; i--) {
@@ -598,13 +688,24 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           });
         }
 
-        return { stdout: JSON.stringify({ strategyId, runId: run.id, count: out.length, trades: out }, null, 2) + "\n", stderr: "", exitCode: 0 };
+        return {
+          stdout:
+            JSON.stringify({ strategyId, runId: run.id, count: out.length, trades: out }, null, 2) +
+            "\n",
+          stderr: "",
+          exitCode: 0,
+        };
       }
 
       if (action === "positions") {
         const strategyId = actionArgs[0] ?? null;
         if (strategyId === null || strategyId === "") {
-          return { stdout: "", stderr: "Error: strategyId required\nUsage: trad strategies positions <strategyId> [--runId <id>]\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr:
+              "Error: strategyId required\nUsage: trad strategies positions <strategyId> [--runId <id>]\n",
+            exitCode: 1,
+          };
         }
 
         const { values } = parseArgs({
@@ -624,37 +725,48 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
 
         let run = null as null | StrategyRunLookupRow;
         if (runId !== null) {
-          run = db.query<StrategyRunLookupRow, [string, string]>(
-            `SELECT id, startedAt
+          run = db
+            .query<StrategyRunLookupRow, [string, string]>(
+              `SELECT id, startedAt
             FROM StrategyRun
             WHERE id = ? AND strategyId = ?
             LIMIT 1`,
-          ).get(runId, strategyId);
+            )
+            .get(runId, strategyId);
         } else {
-          run = db.query<StrategyRunLookupRow, [string]>(
-            `SELECT id, startedAt
+          run = db
+            .query<StrategyRunLookupRow, [string]>(
+              `SELECT id, startedAt
             FROM StrategyRun
             WHERE strategyId = ? AND stoppedAt IS NULL
             ORDER BY startedAt DESC
             LIMIT 1`,
-          ).get(strategyId);
+            )
+            .get(strategyId);
           if (run === null) {
-            run = db.query<StrategyRunLookupRow, [string]>(
-              `SELECT id, startedAt
+            run = db
+              .query<StrategyRunLookupRow, [string]>(
+                `SELECT id, startedAt
               FROM StrategyRun
               WHERE strategyId = ?
               ORDER BY startedAt DESC
               LIMIT 1`,
-            ).get(strategyId);
+              )
+              .get(strategyId);
           }
         }
 
         if (run === null) {
-          return { stdout: JSON.stringify({ strategyId, run: null, positions: [] }, null, 2) + "\n", stderr: "", exitCode: 0 };
+          return {
+            stdout: JSON.stringify({ strategyId, run: null, positions: [] }, null, 2) + "\n",
+            stderr: "",
+            exitCode: 0,
+          };
         }
 
-        const rows = db.query<StrategyPositionRow, [string]>(
-          `SELECT
+        const rows = db
+          .query<StrategyPositionRow, [string]>(
+            `SELECT
             pairAddress,
             tokenAddress,
             tokenHeld,
@@ -663,7 +775,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           FROM StrategyPosition
           WHERE runId = ?
           ORDER BY updatedAt DESC`,
-        ).all(run.id);
+          )
+          .all(run.id);
         const out: Record<string, unknown>[] = [];
         for (const p of rows) {
           out.push({
@@ -675,7 +788,16 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           });
         }
 
-        return { stdout: JSON.stringify({ strategyId, runId: run.id, count: out.length, positions: out }, null, 2) + "\n", stderr: "", exitCode: 0 };
+        return {
+          stdout:
+            JSON.stringify(
+              { strategyId, runId: run.id, count: out.length, positions: out },
+              null,
+              2,
+            ) + "\n",
+          stderr: "",
+          exitCode: 0,
+        };
       }
 
       return {
@@ -691,8 +813,9 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         return { stdout: "", stderr: `Error: failed to open dev.db (${err})\n`, exitCode: 1 };
       }
 
-      const secrets = db.query<ExchangeSecretRow, []>(
-        `SELECT
+      const secrets = db
+        .query<ExchangeSecretRow, []>(
+          `SELECT
           id,
           exchange,
           apiKey,
@@ -701,7 +824,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           updatedAt
         FROM ExchangeSecret
         ORDER BY updatedAt DESC`,
-      ).all();
+        )
+        .all();
       const out: Record<string, unknown>[] = [];
       for (const s of secrets) {
         const hasApiKey = s.apiKey !== "";
@@ -718,21 +842,26 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         });
       }
 
-      return { stdout: JSON.stringify({ exchanges: out }, null, 2) + "\n", stderr: "", exitCode: 0 };
+      return {
+        stdout: JSON.stringify({ exchanges: out }, null, 2) + "\n",
+        stderr: "",
+        exitCode: 0,
+      };
     }
 
     if (subcommand === "dry-run") {
       return {
-        stdout: JSON.stringify(
-          {
-            dryRun: isDryRun(),
-            allowLiveTradingEnv: envAllowLiveTrading,
-            envDryRun: envDryRunFlag,
-            risk: riskLimitsFromEnv,
-          },
-          null,
-          2,
-        ) + "\n",
+        stdout:
+          JSON.stringify(
+            {
+              dryRun: isDryRun(),
+              allowLiveTradingEnv: envAllowLiveTrading,
+              envDryRun: envDryRunFlag,
+              risk: riskLimitsFromEnv,
+            },
+            null,
+            2,
+          ) + "\n",
         stderr: "",
         exitCode: 0,
       };
@@ -745,7 +874,11 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
       if (action === "eth-balance") {
         const addrRaw = actionArgs[0] ?? null;
         if (addrRaw === null || addrRaw === "") {
-          return { stdout: "", stderr: "Error: address required\nUsage: trad wallet eth-balance <address>\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: "Error: address required\nUsage: trad wallet eth-balance <address>\n",
+            exitCode: 1,
+          };
         }
 
         let addr: `0x${string}`;
@@ -757,11 +890,18 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
 
         const bal = await baseClient.getBalance({ address: addr });
         return {
-          stdout: JSON.stringify(
-            { address: addr, chainId: base.id, eth: formatEther(bal), wei: bal.toString(), timestamp: new Date().toISOString() },
-            null,
-            2,
-          ) + "\n",
+          stdout:
+            JSON.stringify(
+              {
+                address: addr,
+                chainId: base.id,
+                eth: formatEther(bal),
+                wei: bal.toString(),
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2,
+            ) + "\n",
           stderr: "",
           exitCode: 0,
         };
@@ -773,8 +913,9 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           return { stdout: "", stderr: `Error: failed to open dev.db (${err})\n`, exitCode: 1 };
         }
 
-        const secret = db.query<ExchangeSecretRow, [string]>(
-          `SELECT
+        const secret = db
+          .query<ExchangeSecretRow, [string]>(
+            `SELECT
             id,
             exchange,
             apiKey,
@@ -784,7 +925,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           FROM ExchangeSecret
           WHERE exchange = ?
           LIMIT 1`,
-        ).get("robinpump");
+          )
+          .get("robinpump");
         const walletAddressRaw = secret?.walletAddress ?? null;
 
         let walletAddress = null as null | `0x${string}`;
@@ -833,7 +975,8 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         }
 
         const hasWalletAddressInDb = walletAddressSource === "db";
-        if (hasWalletAddressInDb && delegateAddress !== null && operatorAddress !== null) mode = "delegate";
+        if (hasWalletAddressInDb && delegateAddress !== null && operatorAddress !== null)
+          mode = "delegate";
         else if (hasDirectKey) mode = "direct";
 
         let walletEth = null as null | { eth: string; wei: string };
@@ -862,41 +1005,46 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         }
 
         return {
-          stdout: JSON.stringify(
-            {
-              exchange: "robinpump",
-              mode,
-              walletAddress: walletAddress,
-              walletAddressMasked: walletAddress ? maskAddress(walletAddress) : null,
-              walletAddressSource,
-              configured: {
-                hasDbSecret: secret !== null,
-                hasWalletAddress: hasWalletAddressInDb,
-                hasDerivedWalletAddress: walletAddressSource === "derived",
-                hasDirectPrivateKey: hasDirectKey,
-                hasDelegateAddressEnv: delegateAddress !== null,
-                hasOperatorKeyEnv: operatorAddress !== null,
+          stdout:
+            JSON.stringify(
+              {
+                exchange: "robinpump",
+                mode,
+                walletAddress: walletAddress,
+                walletAddressMasked: walletAddress ? maskAddress(walletAddress) : null,
+                walletAddressSource,
+                configured: {
+                  hasDbSecret: secret !== null,
+                  hasWalletAddress: hasWalletAddressInDb,
+                  hasDerivedWalletAddress: walletAddressSource === "derived",
+                  hasDirectPrivateKey: hasDirectKey,
+                  hasDelegateAddressEnv: delegateAddress !== null,
+                  hasOperatorKeyEnv: operatorAddress !== null,
+                },
+                balances: {
+                  walletEth,
+                  delegateEth,
+                },
+                rpc: {
+                  chainId: base.id,
+                  hasBaseRpcUrlEnv,
+                  urlIsDefault: rpcUrl === "https://mainnet.base.org",
+                },
+                timestamp: new Date().toISOString(),
               },
-              balances: {
-                walletEth,
-                delegateEth,
-              },
-              rpc: {
-                chainId: base.id,
-                hasBaseRpcUrlEnv,
-                urlIsDefault: rpcUrl === "https://mainnet.base.org",
-              },
-              timestamp: new Date().toISOString(),
-            },
-            null,
-            2,
-          ) + "\n",
+              null,
+              2,
+            ) + "\n",
           stderr: "",
           exitCode: 0,
         };
       }
 
-      return { stdout: "", stderr: `Unknown command: wallet ${action}\nRun 'trad help' for usage.\n`, exitCode: 1 };
+      return {
+        stdout: "",
+        stderr: `Unknown command: wallet ${action}\nRun 'trad help' for usage.\n`,
+        exitCode: 1,
+      };
     }
 
     if (subcommand === "delegate") {
@@ -914,40 +1062,78 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
       }
 
       if (action === "info") {
-        return { stdout: JSON.stringify({ configured: delegateAddress !== null, address: delegateAddress }, null, 2) + "\n", stderr: "", exitCode: 0 };
+        return {
+          stdout:
+            JSON.stringify(
+              { configured: delegateAddress !== null, address: delegateAddress },
+              null,
+              2,
+            ) + "\n",
+          stderr: "",
+          exitCode: 0,
+        };
       }
 
       if (delegateAddress === null) {
-        return { stdout: "", stderr: "Error: TradDelegate not configured (missing/invalid TRAD_DELEGATE_ADDRESS)\n", exitCode: 1 };
+        return {
+          stdout: "",
+          stderr: "Error: TradDelegate not configured (missing/invalid TRAD_DELEGATE_ADDRESS)\n",
+          exitCode: 1,
+        };
       }
 
       if (action === "status") {
         const [owner, operator, guardian, paused, fee, feeReceiver] = await Promise.all([
-          baseClient.readContract({ address: delegateAddress, abi: tradDelegateAbi, functionName: "owner" }),
-          baseClient.readContract({ address: delegateAddress, abi: tradDelegateAbi, functionName: "operator" }),
-          baseClient.readContract({ address: delegateAddress, abi: tradDelegateAbi, functionName: "guardian" }),
-          baseClient.readContract({ address: delegateAddress, abi: tradDelegateAbi, functionName: "paused" }),
-          baseClient.readContract({ address: delegateAddress, abi: tradDelegateAbi, functionName: "fee" }),
-          baseClient.readContract({ address: delegateAddress, abi: tradDelegateAbi, functionName: "feeReceiver" }),
+          baseClient.readContract({
+            address: delegateAddress,
+            abi: tradDelegateAbi,
+            functionName: "owner",
+          }),
+          baseClient.readContract({
+            address: delegateAddress,
+            abi: tradDelegateAbi,
+            functionName: "operator",
+          }),
+          baseClient.readContract({
+            address: delegateAddress,
+            abi: tradDelegateAbi,
+            functionName: "guardian",
+          }),
+          baseClient.readContract({
+            address: delegateAddress,
+            abi: tradDelegateAbi,
+            functionName: "paused",
+          }),
+          baseClient.readContract({
+            address: delegateAddress,
+            abi: tradDelegateAbi,
+            functionName: "fee",
+          }),
+          baseClient.readContract({
+            address: delegateAddress,
+            abi: tradDelegateAbi,
+            functionName: "feeReceiver",
+          }),
         ]);
 
         return {
-          stdout: JSON.stringify(
-            {
-              address: delegateAddress,
-              chainId: base.id,
-              owner,
-              operator,
-              guardian,
-              paused,
-              feeBps: Number(fee),
-              feePct: Number(fee) / 100,
-              feeReceiver,
-              timestamp: new Date().toISOString(),
-            },
-            null,
-            2,
-          ) + "\n",
+          stdout:
+            JSON.stringify(
+              {
+                address: delegateAddress,
+                chainId: base.id,
+                owner,
+                operator,
+                guardian,
+                paused,
+                feeBps: Number(fee),
+                feePct: Number(fee) / 100,
+                feeReceiver,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2,
+            ) + "\n",
           stderr: "",
           exitCode: 0,
         };
@@ -967,10 +1153,15 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         if (userRaw === null) {
           if (db === null) {
             const err = dbInitError ?? "Database not available";
-            return { stdout: "", stderr: `Error: missing --user and failed to open dev.db (${err})\n`, exitCode: 1 };
+            return {
+              stdout: "",
+              stderr: `Error: missing --user and failed to open dev.db (${err})\n`,
+              exitCode: 1,
+            };
           }
-          const secret = db.query<ExchangeSecretRow, [string]>(
-            `SELECT
+          const secret = db
+            .query<ExchangeSecretRow, [string]>(
+              `SELECT
               id,
               exchange,
               apiKey,
@@ -980,12 +1171,17 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
             FROM ExchangeSecret
             WHERE exchange = ?
             LIMIT 1`,
-          ).get("robinpump");
+            )
+            .get("robinpump");
           fallbackUser = secret?.walletAddress ?? null;
         }
         const targetRaw = userRaw ?? fallbackUser;
         if (targetRaw === null || targetRaw === "") {
-          return { stdout: "", stderr: "Error: missing user address (pass --user 0x... or configure walletAddress)\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: "Error: missing user address (pass --user 0x... or configure walletAddress)\n",
+            exitCode: 1,
+          };
         }
 
         let user: `0x${string}`;
@@ -1003,11 +1199,18 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         });
 
         return {
-          stdout: JSON.stringify(
-            { contract: delegateAddress, user, balanceEth: formatEther(bal), balanceWei: bal.toString(), timestamp: new Date().toISOString() },
-            null,
-            2,
-          ) + "\n",
+          stdout:
+            JSON.stringify(
+              {
+                contract: delegateAddress,
+                user,
+                balanceEth: formatEther(bal),
+                balanceWei: bal.toString(),
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2,
+            ) + "\n",
           stderr: "",
           exitCode: 0,
         };
@@ -1023,9 +1226,15 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
           strict: false,
         });
 
-        const tokenRaw = typeof values.token === "string" && values.token !== "" ? values.token : null;
+        const tokenRaw =
+          typeof values.token === "string" && values.token !== "" ? values.token : null;
         if (tokenRaw === null) {
-          return { stdout: "", stderr: "Error: missing --token 0x...\nUsage: trad delegate token-balance --token <address> [--user <address>]\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr:
+              "Error: missing --token 0x...\nUsage: trad delegate token-balance --token <address> [--user <address>]\n",
+            exitCode: 1,
+          };
         }
 
         let token: `0x${string}`;
@@ -1040,10 +1249,15 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         if (userRaw === null) {
           if (db === null) {
             const err = dbInitError ?? "Database not available";
-            return { stdout: "", stderr: `Error: missing --user and failed to open dev.db (${err})\n`, exitCode: 1 };
+            return {
+              stdout: "",
+              stderr: `Error: missing --user and failed to open dev.db (${err})\n`,
+              exitCode: 1,
+            };
           }
-          const secret = db.query<ExchangeSecretRow, [string]>(
-            `SELECT
+          const secret = db
+            .query<ExchangeSecretRow, [string]>(
+              `SELECT
               id,
               exchange,
               apiKey,
@@ -1053,12 +1267,17 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
             FROM ExchangeSecret
             WHERE exchange = ?
             LIMIT 1`,
-          ).get("robinpump");
+            )
+            .get("robinpump");
           fallbackUser = secret?.walletAddress ?? null;
         }
         const targetRaw = userRaw ?? fallbackUser;
         if (targetRaw === null || targetRaw === "") {
-          return { stdout: "", stderr: "Error: missing user address (pass --user 0x... or configure walletAddress)\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr: "Error: missing user address (pass --user 0x... or configure walletAddress)\n",
+            exitCode: 1,
+          };
         }
 
         let user: `0x${string}`;
@@ -1076,11 +1295,19 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         });
 
         return {
-          stdout: JSON.stringify(
-            { contract: delegateAddress, user, token, balance: formatEther(bal), balanceWei: bal.toString(), timestamp: new Date().toISOString() },
-            null,
-            2,
-          ) + "\n",
+          stdout:
+            JSON.stringify(
+              {
+                contract: delegateAddress,
+                user,
+                token,
+                balance: formatEther(bal),
+                balanceWei: bal.toString(),
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2,
+            ) + "\n",
           stderr: "",
           exitCode: 0,
         };
@@ -1089,7 +1316,12 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
       if (action === "is-pair-allowed") {
         const pairRaw = actionArgs[0] ?? null;
         if (pairRaw === null || pairRaw === "") {
-          return { stdout: "", stderr: "Error: pair address required\nUsage: trad delegate is-pair-allowed <pairAddress>\n", exitCode: 1 };
+          return {
+            stdout: "",
+            stderr:
+              "Error: pair address required\nUsage: trad delegate is-pair-allowed <pairAddress>\n",
+            exitCode: 1,
+          };
         }
 
         let pair: `0x${string}`;
@@ -1107,13 +1339,22 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
         });
 
         return {
-          stdout: JSON.stringify({ contract: delegateAddress, pair, allowed, timestamp: new Date().toISOString() }, null, 2) + "\n",
+          stdout:
+            JSON.stringify(
+              { contract: delegateAddress, pair, allowed, timestamp: new Date().toISOString() },
+              null,
+              2,
+            ) + "\n",
           stderr: "",
           exitCode: 0,
         };
       }
 
-      return { stdout: "", stderr: `Unknown command: delegate ${action}\nRun 'trad help' for usage.\n`, exitCode: 1 };
+      return {
+        stdout: "",
+        stderr: `Unknown command: delegate ${action}\nRun 'trad help' for usage.\n`,
+        exitCode: 1,
+      };
     }
 
     if (subcommand === "help" || subcommand === "--help" || subcommand === "-h") {
@@ -1131,4 +1372,3 @@ export const tradCommand = defineCommand("trad", async (args, ctx) => {
     return { stdout: "", stderr: `Error: ${msg}\n(cwd: ${cwd})\n`, exitCode: 1 };
   }
 });
-
